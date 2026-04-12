@@ -6,7 +6,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +25,7 @@ import za.vodacom.repoprofile.ports.in.ProfileUseCase;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Profile Insights", description = "Endpoints for querying user profiles, repositories and search history across providers (GitHub, GitLab, Bitbucket)")
@@ -47,7 +52,8 @@ public class ProfileController {
             }
     )
     public ResponseEntity<ProfileResponse> getProfile(
-            @Parameter(description = "Username on the source-code platform", example = "octocat") @PathVariable String username,
+            @Parameter(description = "Username on the source-code platform", example = "octocat")
+            @PathVariable @Pattern(regexp = "^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$", message = "Invalid username format") String username,
             @Parameter(description = "Source-code provider", example = "github",
                     schema = @Schema(allowableValues = {"github", "gitlab", "bitbucket"}))
             @RequestParam(defaultValue = "github") String provider) {
@@ -67,14 +73,15 @@ public class ProfileController {
             }
     )
     public ResponseEntity<PagedResponse<RepoResponse>> getRepositories(
-            @Parameter(description = "Username on the source-code platform", example = "octocat") @PathVariable String username,
+            @Parameter(description = "Username on the source-code platform", example = "octocat")
+            @PathVariable @Pattern(regexp = "^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$", message = "Invalid username format") String username,
             @Parameter(description = "Source-code provider", example = "github",
                     schema = @Schema(allowableValues = {"github", "gitlab", "bitbucket"}))
             @RequestParam(defaultValue = "github") String provider,
             @Parameter(description = "Page number (1-based)", example = "1")
-            @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "Results per page (max 100)", example = "10")
-            @RequestParam(defaultValue = "10") int perPage) {
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page must be at least 1") int page,
+            @Parameter(description = "Results per page (1–100)", example = "10")
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "perPage must be at least 1") @Max(value = 100, message = "perPage must not exceed 100") int perPage) {
         return ResponseEntity.ok(profileUseCase.getRepositories(username, provider, page, perPage));
     }
 
