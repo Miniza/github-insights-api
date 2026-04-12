@@ -1,6 +1,7 @@
 package za.vodacom.repoprofile.ports.in;
 
 import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
+import za.vodacom.repoprofile.application.dto.PagedResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 
@@ -14,7 +15,7 @@ public interface GitHubUseCase {
 
     GitHubProfileResponse getProfile(String username, String provider);
 
-    List<RepoResponse> getRepositories(String username, String provider);
+    PagedResponse<RepoResponse> getRepositories(String username, String provider, int page, int perPage);
 
     List<SearchSummary> getSearchHistory();
 }

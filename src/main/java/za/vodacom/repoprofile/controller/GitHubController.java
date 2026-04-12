@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import za.vodacom.repoprofile.application.dto.ErrorResponse;
 import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
+import za.vodacom.repoprofile.application.dto.PagedResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.ports.in.GitHubUseCase;
@@ -56,21 +57,25 @@ public class GitHubController {
     @GetMapping("/profiles/{username}/repos")
     @Operation(
             summary = "Get user repositories",
-            description = "Returns public repositories sorted by stargazers count (descending). Supports multiple providers.",
+            description = "Returns public repositories sorted by stargazers count (descending) with pagination support.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Repositories retrieved successfully"),
-                    @ApiResponse(responseCode = "400", description = "Unsupported provider",
+                    @ApiResponse(responseCode = "400", description = "Unsupported provider or invalid pagination",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "404", description = "User not found",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
-    public ResponseEntity<List<RepoResponse>> getRepositories(
+    public ResponseEntity<PagedResponse<RepoResponse>> getRepositories(
             @Parameter(description = "Username on the source-code platform", example = "octocat") @PathVariable String username,
             @Parameter(description = "Source-code provider", example = "github",
                     schema = @Schema(allowableValues = {"github", "gitlab", "bitbucket"}))
-            @RequestParam(defaultValue = "github") String provider) {
-        return ResponseEntity.ok(gitHubUseCase.getRepositories(username, provider));
+            @RequestParam(defaultValue = "github") String provider,
+            @Parameter(description = "Page number (1-based)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "Results per page (max 100)", example = "10")
+            @RequestParam(defaultValue = "10") int perPage) {
+        return ResponseEntity.ok(gitHubUseCase.getRepositories(username, provider, page, perPage));
     }
 
     @GetMapping("/searches")

@@ -45,6 +45,10 @@ github:
 search-history:
   max-records: 50
 
+# --- Language strategy: byRepoCount | byRepoSize ---
+language:
+  strategy: byRepoCount #byRepoSize
+
 # --- Resilience4j ---
 resilience4j:
   circuitbreaker:

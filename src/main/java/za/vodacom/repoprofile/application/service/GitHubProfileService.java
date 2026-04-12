@@ -2,10 +2,10 @@ package za.vodacom.repoprofile.application.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
+import za.vodacom.repoprofile.application.dto.PagedResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.application.mapper.GitHubMapper;
@@ -19,6 +19,7 @@ import za.vodacom.repoprofile.ports.out.SearchHistoryRepositoryPort;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class GitHubProfileService implements GitHubUseCase {
@@ -32,11 +33,16 @@ public class GitHubProfileService implements GitHubUseCase {
 
     public GitHubProfileService(SourceCodeClientResolver clientResolver,
                                 SearchHistoryRepositoryPort searchHistoryRepository,
-                                @Qualifier("byRepoCount") LanguageStrategy languageStrategy,
+                                Map<String, LanguageStrategy> strategies,
+                                @Value("${language.strategy:byRepoCount}") String strategyName,
                                 @Value("${search-history.max-records:50}") int maxRecords) {
         this.clientResolver = clientResolver;
         this.searchHistoryRepository = searchHistoryRepository;
-        this.languageStrategy = languageStrategy;
+        this.languageStrategy = strategies.get(strategyName);
+        if (this.languageStrategy == null) {
+            throw new IllegalArgumentException(
+                    "Unknown language strategy: '%s'. Available: %s".formatted(strategyName, strategies.keySet()));
+        }
         this.maxRecords = maxRecords;
     }
 
@@ -64,15 +70,16 @@ public class GitHubProfileService implements GitHubUseCase {
     }
 
     @Override
-    public List<RepoResponse> getRepositories(String username, String provider) {
-        log.info("Processing repos request for user: {} via provider: {}", username, provider);
+    public PagedResponse<RepoResponse> getRepositories(String username, String provider, int page, int perPage) {
+        log.info("Processing repos request for user: {} via provider: {} (page={}, perPage={})", username, provider, page, perPage);
 
         SourceCodeClient client = clientResolver.resolve(provider);
         List<Repo> repos = client.fetchRepositories(username);
-        return repos.stream()
+        List<RepoResponse> sorted = repos.stream()
                 .sorted(Comparator.comparingInt(Repo::stargazersCount).reversed())
                 .map(GitHubMapper::toRepoResponse)
                 .toList();
+        return PagedResponse.of(sorted, page, perPage);
     }
 
     @Override
