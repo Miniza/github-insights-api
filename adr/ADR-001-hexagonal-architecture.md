@@ -55,12 +55,12 @@ HTTP Request
 Controller (driving adapter)
     │
     ▼
-GitHubUseCase (driving port — interface)
+ProfileUseCase (driving port — interface)
     │
     ▼
-GitHubProfileService (application service — implements use case)
+ProfileService (application service — implements use case)
     │
-    ├──► GitHubClient (driven port — interface) ──► GitHubWebClientAdapter
+    ├──► SourceCodeClient (driven port — interface) ──► GitHubWebClientAdapter
     │
     └──► SearchHistoryRepositoryPort (driven port) ──► SearchHistoryRepositoryAdapter
 ```

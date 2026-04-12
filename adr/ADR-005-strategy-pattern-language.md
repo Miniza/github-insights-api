@@ -38,10 +38,11 @@ public interface LanguageStrategy {
 The active strategy is injected via `@Qualifier`:
 
 ```java
-public GitHubProfileService(
-    GitHubClient gitHubClient,
+public ProfileService(
+    SourceCodeClientResolver clientResolver,
     SearchHistoryRepositoryPort searchHistoryRepository,
-    @Qualifier("byRepoCount") LanguageStrategy languageStrategy
+    Map<String, LanguageStrategy> strategies,
+    @Value("${language.strategy:byRepoCount}") String strategyName
 ) { ... }
 ```
 

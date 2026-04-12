@@ -13,23 +13,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import za.vodacom.repoprofile.application.dto.ErrorResponse;
-import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
+import za.vodacom.repoprofile.application.dto.ProfileResponse;
 import za.vodacom.repoprofile.application.dto.PagedResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
-import za.vodacom.repoprofile.ports.in.GitHubUseCase;
+import za.vodacom.repoprofile.ports.in.ProfileUseCase;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Profile Insights", description = "Endpoints for querying user profiles, repositories and search history across providers (GitHub, GitLab, Bitbucket)")
-public class GitHubController {
+public class ProfileController {
 
-    private final GitHubUseCase gitHubUseCase;
+    private final ProfileUseCase profileUseCase;
 
-    public GitHubController(GitHubUseCase gitHubUseCase) {
-        this.gitHubUseCase = gitHubUseCase;
+    public ProfileController(ProfileUseCase profileUseCase) {
+        this.profileUseCase = profileUseCase;
     }
 
     @GetMapping("/profiles/{username}")
@@ -46,12 +46,12 @@ public class GitHubController {
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
-    public ResponseEntity<GitHubProfileResponse> getProfile(
+    public ResponseEntity<ProfileResponse> getProfile(
             @Parameter(description = "Username on the source-code platform", example = "octocat") @PathVariable String username,
             @Parameter(description = "Source-code provider", example = "github",
                     schema = @Schema(allowableValues = {"github", "gitlab", "bitbucket"}))
             @RequestParam(defaultValue = "github") String provider) {
-        return ResponseEntity.ok(gitHubUseCase.getProfile(username, provider));
+        return ResponseEntity.ok(profileUseCase.getProfile(username, provider));
     }
 
     @GetMapping("/profiles/{username}/repos")
@@ -75,7 +75,7 @@ public class GitHubController {
             @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Results per page (max 100)", example = "10")
             @RequestParam(defaultValue = "10") int perPage) {
-        return ResponseEntity.ok(gitHubUseCase.getRepositories(username, provider, page, perPage));
+        return ResponseEntity.ok(profileUseCase.getRepositories(username, provider, page, perPage));
     }
 
     @GetMapping("/searches")
@@ -84,6 +84,6 @@ public class GitHubController {
             description = "Returns the last 50 profile searches with timestamps and summaries"
     )
     public ResponseEntity<List<SearchSummary>> getSearchHistory() {
-        return ResponseEntity.ok(gitHubUseCase.getSearchHistory());
+        return ResponseEntity.ok(profileUseCase.getSearchHistory());
     }
 }

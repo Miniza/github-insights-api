@@ -13,11 +13,11 @@ Built using **Hexagonal Architecture (Ports and Adapters)** to enforce clean bou
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                     ┌──────▼──────┐
-                    │ GitHubUseCase│  ← driving port (interface)
+                    │  ProfileUseCase │  ← driving port (interface)
                     └──────┬──────┘
                            │
                ┌───────────▼───────────┐
-               │  GitHubProfileService  │  ← application service
+               │   ProfileService      │  ← application service
                └───┬───────────────┬───┘
                    │               │
      ┌─────────────▼────────┐ ┌───▼──────────────────┐

@@ -1,7 +1,7 @@
 package za.vodacom.repoprofile.application.mapper;
 
 import za.vodacom.repoprofile.adapters.persistence.entity.SearchHistoryEntity;
-import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
+import za.vodacom.repoprofile.application.dto.ProfileResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.domain.model.Repo;
@@ -9,9 +9,9 @@ import za.vodacom.repoprofile.domain.model.User;
 
 import java.util.List;
 
-public final class GitHubMapper {
+public final class ProfileMapper {
 
-    private GitHubMapper() {
+    private ProfileMapper() {
     }
 
     public static RepoResponse toRepoResponse(Repo repo) {
@@ -26,10 +26,10 @@ public final class GitHubMapper {
         );
     }
 
-    public static GitHubProfileResponse toProfileResponse(User user,
-                                                           String topLanguage,
-                                                           List<RepoResponse> repos) {
-        return new GitHubProfileResponse(
+    public static ProfileResponse toProfileResponse(User user,
+                                                     String topLanguage,
+                                                     List<RepoResponse> repos) {
+        return new ProfileResponse(
                 user.login(),
                 user.name(),
                 user.bio(),
