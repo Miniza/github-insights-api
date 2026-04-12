@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="repo-profile"/>
+    <springProperty scope="context" name="SERVER_PORT" source="server.port" defaultValue="8080"/>
+
+    <!-- ===================== CONSOLE (dev) ===================== -->
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- =================== JSON (prod) =================== -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdcKeyName>correlationId</includeMdcKeyName>
+                <includeMdcKeyName>method</includeMdcKeyName>
+                <includeMdcKeyName>uri</includeMdcKeyName>
+                <includeMdcKeyName>queryString</includeMdcKeyName>
+                <includeMdcKeyName>clientIp</includeMdcKeyName>
+                <includeMdcKeyName>httpStatus</includeMdcKeyName>
+                <includeMdcKeyName>durationMs</includeMdcKeyName>
+                <includeMdcKeyName>requestBody</includeMdcKeyName>
+                <includeMdcKeyName>responseBody</includeMdcKeyName>
+
+                <customFields>
+                    {"service":"${APP_NAME}","port":"${SERVER_PORT}"}
+                </customFields>
+
+                <fieldNames>
+                    <timestamp>timestamp</timestamp>
+                    <version>[ignore]</version>
+                    <levelValue>[ignore]</levelValue>
+                </fieldNames>
+
+                <timeZone>UTC</timeZone>
+                <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>

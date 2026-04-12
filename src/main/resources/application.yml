@@ -1,0 +1,97 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: repo-profile
+
+  datasource:
+    url: jdbc:h2:mem:repoprofile;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Cache is configured programmatically in CaffeineCacheConfig
+
+# --- Cache TTL and size ---
+cache:
+  max-size: 500
+  ttl: 300s
+
+# --- GitHub provider configuration ---
+github:
+  api:
+    base-url: https://api.github.com
+    connect-timeout: 5s
+    read-timeout: 10s
+    token: "" # optional: set to bypass rate limits
+    user-agent: repo-profile-app
+
+# --- Search history configuration ---
+search-history:
+  max-records: 50
+
+# --- Resilience4j ---
+resilience4j:
+  circuitbreaker:
+    instances:
+      github:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+      database:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 2
+  retry:
+    instances:
+      github:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        randomized-wait-factor: 0.5
+        retry-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+  ratelimiter:
+    instances:
+      github:
+        limit-for-period: 10
+        limit-refresh-period: 60s
+        timeout-duration: 5s
+
+# --- OpenAPI / Swagger ---
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# --- Actuator ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,caches,circuitbreakers,retries,ratelimiters,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
