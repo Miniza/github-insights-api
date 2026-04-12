@@ -3,6 +3,7 @@ package za.vodacom.repoprofile.application.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import za.vodacom.repoprofile.application.dto.ProfileResponse;
 import za.vodacom.repoprofile.application.dto.PagedResponse;
@@ -10,6 +11,7 @@ import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.application.mapper.ProfileMapper;
 import za.vodacom.repoprofile.config.SourceCodeClientResolver;
+import za.vodacom.repoprofile.domain.event.SearchPerformedEvent;
 import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.User;
 import za.vodacom.repoprofile.domain.strategy.LanguageStrategy;
@@ -28,16 +30,19 @@ public class ProfileService implements ProfileUseCase {
 
     private final SourceCodeClientResolver clientResolver;
     private final SearchHistoryRepositoryPort searchHistoryRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final LanguageStrategy languageStrategy;
     private final int maxRecords;
 
     public ProfileService(SourceCodeClientResolver clientResolver,
                           SearchHistoryRepositoryPort searchHistoryRepository,
+                          ApplicationEventPublisher eventPublisher,
                           Map<String, LanguageStrategy> strategies,
                           @Value("${language.strategy:byRepoCount}") String strategyName,
                           @Value("${search-history.max-records:50}") int maxRecords) {
         this.clientResolver = clientResolver;
         this.searchHistoryRepository = searchHistoryRepository;
+        this.eventPublisher = eventPublisher;
         this.languageStrategy = strategies.get(strategyName);
         if (this.languageStrategy == null) {
             throw new IllegalArgumentException(
@@ -61,10 +66,9 @@ public class ProfileService implements ProfileUseCase {
                 .map(ProfileMapper::toRepoResponse)
                 .toList();
 
-        // Persist search record
+        // Publish event — persisted asynchronously
         String summary = ProfileMapper.buildSummary(user.login(), user.publicRepos(), topLanguage);
-        searchHistoryRepository.save(user.login(), summary);
-        searchHistoryRepository.pruneOldest(maxRecords);
+        eventPublisher.publishEvent(new SearchPerformedEvent(user.login(), summary));
 
         return ProfileMapper.toProfileResponse(user, topLanguage, sortedRepos);
     }
@@ -81,8 +85,7 @@ public class ProfileService implements ProfileUseCase {
                 .toList();
 
         String summary = "%s – %d repos (page %d)".formatted(username, repos.size(), page);
-        searchHistoryRepository.save(username, summary);
-        searchHistoryRepository.pruneOldest(maxRecords);
+        eventPublisher.publishEvent(new SearchPerformedEvent(username, summary));
 
         return PagedResponse.of(sorted, page, perPage);
     }
