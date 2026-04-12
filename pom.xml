@@ -50,6 +50,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Database Migrations -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
         <!-- Caching (rate-limit mitigation) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
