@@ -21,9 +21,9 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(404, "Not Found", ex.getMessage()));
     }
 
-    @ExceptionHandler(GitHubApiException.class)
-    public ResponseEntity<ErrorResponse> handleGitHubApi(GitHubApiException ex) {
-        log.error("GitHub API error: {}", ex.getMessage(), ex);
+    @ExceptionHandler(ProviderApiException.class)
+    public ResponseEntity<ErrorResponse> handleProviderApi(ProviderApiException ex) {
+        log.error("Provider API error: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(ErrorResponse.of(502, "Bad Gateway", ex.getMessage()));
     }
@@ -45,6 +45,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(ErrorResponse.of(429, "Too Many Requests",
                         "Rate limit exceeded. Please slow down."));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, "Bad Request", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

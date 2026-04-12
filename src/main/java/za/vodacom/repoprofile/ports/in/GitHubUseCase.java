@@ -8,12 +8,13 @@ import java.util.List;
 
 /**
  * Driving port – defines all use cases exposed by the application layer.
+ * Provider-agnostic: the {@code provider} parameter selects the source (github, gitlab, bitbucket).
  */
 public interface GitHubUseCase {
 
-    GitHubProfileResponse getProfile(String username);
+    GitHubProfileResponse getProfile(String username, String provider);
 
-    List<RepoResponse> getRepositories(String username);
+    List<RepoResponse> getRepositories(String username, String provider);
 
     List<SearchSummary> getSearchHistory();
 }

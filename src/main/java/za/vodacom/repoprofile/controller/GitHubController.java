@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import za.vodacom.repoprofile.application.dto.ErrorResponse;
 import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
@@ -21,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
-@Tag(name = "GitHub Profile Insights", description = "Endpoints for querying GitHub user profiles, repositories and search history")
+@Tag(name = "Profile Insights", description = "Endpoints for querying user profiles, repositories and search history across providers (GitHub, GitLab, Bitbucket)")
 public class GitHubController {
 
     private final GitHubUseCase gitHubUseCase;
@@ -32,34 +33,44 @@ public class GitHubController {
 
     @GetMapping("/profiles/{username}")
     @Operation(
-            summary = "Get GitHub user profile",
-            description = "Fetches profile details including top language and repositories sorted by stars",
+            summary = "Get user profile",
+            description = "Fetches profile details including top language and repositories sorted by stars. Supports multiple providers via the 'provider' query parameter.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
-                    @ApiResponse(responseCode = "404", description = "GitHub user not found",
+                    @ApiResponse(responseCode = "400", description = "Unsupported provider",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                    @ApiResponse(responseCode = "502", description = "GitHub API error",
+                    @ApiResponse(responseCode = "404", description = "User not found",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "502", description = "Provider API error",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<GitHubProfileResponse> getProfile(
-            @Parameter(description = "GitHub username", example = "octocat") @PathVariable String username) {
-        return ResponseEntity.ok(gitHubUseCase.getProfile(username));
+            @Parameter(description = "Username on the source-code platform", example = "octocat") @PathVariable String username,
+            @Parameter(description = "Source-code provider", example = "github",
+                    schema = @Schema(allowableValues = {"github", "gitlab", "bitbucket"}))
+            @RequestParam(defaultValue = "github") String provider) {
+        return ResponseEntity.ok(gitHubUseCase.getProfile(username, provider));
     }
 
     @GetMapping("/profiles/{username}/repos")
     @Operation(
             summary = "Get user repositories",
-            description = "Returns public repositories sorted by stargazers count (descending)",
+            description = "Returns public repositories sorted by stargazers count (descending). Supports multiple providers.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Repositories retrieved successfully"),
-                    @ApiResponse(responseCode = "404", description = "GitHub user not found",
+                    @ApiResponse(responseCode = "400", description = "Unsupported provider",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "User not found",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     public ResponseEntity<List<RepoResponse>> getRepositories(
-            @Parameter(description = "GitHub username", example = "octocat") @PathVariable String username) {
-        return ResponseEntity.ok(gitHubUseCase.getRepositories(username));
+            @Parameter(description = "Username on the source-code platform", example = "octocat") @PathVariable String username,
+            @Parameter(description = "Source-code provider", example = "github",
+                    schema = @Schema(allowableValues = {"github", "gitlab", "bitbucket"}))
+            @RequestParam(defaultValue = "github") String provider) {
+        return ResponseEntity.ok(gitHubUseCase.getRepositories(username, provider));
     }
 
     @GetMapping("/searches")

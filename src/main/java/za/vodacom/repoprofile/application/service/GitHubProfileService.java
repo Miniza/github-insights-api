@@ -9,11 +9,12 @@ import za.vodacom.repoprofile.application.dto.GitHubProfileResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.application.mapper.GitHubMapper;
+import za.vodacom.repoprofile.config.SourceCodeClientResolver;
 import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.User;
 import za.vodacom.repoprofile.domain.strategy.LanguageStrategy;
 import za.vodacom.repoprofile.ports.in.GitHubUseCase;
-import za.vodacom.repoprofile.ports.out.GitHubClient;
+import za.vodacom.repoprofile.ports.out.SourceCodeClient;
 import za.vodacom.repoprofile.ports.out.SearchHistoryRepositoryPort;
 
 import java.util.Comparator;
@@ -24,27 +25,28 @@ public class GitHubProfileService implements GitHubUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubProfileService.class);
 
-    private final GitHubClient gitHubClient;
+    private final SourceCodeClientResolver clientResolver;
     private final SearchHistoryRepositoryPort searchHistoryRepository;
     private final LanguageStrategy languageStrategy;
     private final int maxRecords;
 
-    public GitHubProfileService(GitHubClient gitHubClient,
+    public GitHubProfileService(SourceCodeClientResolver clientResolver,
                                 SearchHistoryRepositoryPort searchHistoryRepository,
                                 @Qualifier("byRepoCount") LanguageStrategy languageStrategy,
                                 @Value("${search-history.max-records:50}") int maxRecords) {
-        this.gitHubClient = gitHubClient;
+        this.clientResolver = clientResolver;
         this.searchHistoryRepository = searchHistoryRepository;
         this.languageStrategy = languageStrategy;
         this.maxRecords = maxRecords;
     }
 
     @Override
-    public GitHubProfileResponse getProfile(String username) {
-        log.info("Processing profile request for user: {}", username);
+    public GitHubProfileResponse getProfile(String username, String provider) {
+        log.info("Processing profile request for user: {} via provider: {}", username, provider);
 
-        User user = gitHubClient.fetchUser(username);
-        List<Repo> repos = gitHubClient.fetchRepositories(username);
+        SourceCodeClient client = clientResolver.resolve(provider);
+        User user = client.fetchUser(username);
+        List<Repo> repos = client.fetchRepositories(username);
 
         String topLanguage = languageStrategy.determineTopLanguage(repos);
 
@@ -62,10 +64,11 @@ public class GitHubProfileService implements GitHubUseCase {
     }
 
     @Override
-    public List<RepoResponse> getRepositories(String username) {
-        log.info("Processing repos request for user: {}", username);
+    public List<RepoResponse> getRepositories(String username, String provider) {
+        log.info("Processing repos request for user: {} via provider: {}", username, provider);
 
-        List<Repo> repos = gitHubClient.fetchRepositories(username);
+        SourceCodeClient client = clientResolver.resolve(provider);
+        List<Repo> repos = client.fetchRepositories(username);
         return repos.stream()
                 .sorted(Comparator.comparingInt(Repo::stargazersCount).reversed())
                 .map(GitHubMapper::toRepoResponse)

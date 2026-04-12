@@ -14,16 +14,16 @@ import za.vodacom.repoprofile.adapters.github.dto.GitHubRepoResponse;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubUserResponse;
 import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.User;
-import za.vodacom.repoprofile.exception.GitHubApiException;
+import za.vodacom.repoprofile.exception.ProviderApiException;
 import za.vodacom.repoprofile.exception.NotFoundException;
-import za.vodacom.repoprofile.ports.out.GitHubClient;
+import za.vodacom.repoprofile.ports.out.SourceCodeClient;
 import za.vodacom.repoprofile.util.Constants;
 
 import java.util.Collections;
 import java.util.List;
 
-@Component
-public class GitHubWebClientAdapter implements GitHubClient {
+@Component("github")
+public class GitHubWebClientAdapter implements SourceCodeClient {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubWebClientAdapter.class);
 
@@ -58,7 +58,7 @@ public class GitHubWebClientAdapter implements GitHubClient {
         } catch (WebClientResponseException.NotFound e) {
             throw new NotFoundException("GitHub user not found: " + username);
         } catch (WebClientResponseException e) {
-            throw new GitHubApiException("GitHub API error: " + e.getStatusCode(), e);
+            throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
         }
     }
 
@@ -89,7 +89,7 @@ public class GitHubWebClientAdapter implements GitHubClient {
         } catch (WebClientResponseException.NotFound e) {
             throw new NotFoundException("GitHub user not found: " + username);
         } catch (WebClientResponseException e) {
-            throw new GitHubApiException("GitHub API error: " + e.getStatusCode(), e);
+            throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
         }
     }
 
@@ -99,7 +99,7 @@ public class GitHubWebClientAdapter implements GitHubClient {
             throw (NotFoundException) t;
         }
         log.error("Circuit breaker open for profile fetch: {}", t.getMessage());
-        throw new GitHubApiException("GitHub service is temporarily unavailable. Please try again later.", t);
+        throw new ProviderApiException("GitHub service is temporarily unavailable. Please try again later.", t);
     }
 
     @SuppressWarnings("unused")
@@ -108,6 +108,6 @@ public class GitHubWebClientAdapter implements GitHubClient {
             throw (NotFoundException) t;
         }
         log.error("Circuit breaker open for repos fetch: {}", t.getMessage());
-        throw new GitHubApiException("GitHub service is temporarily unavailable. Please try again later.", t);
+        throw new ProviderApiException("GitHub service is temporarily unavailable. Please try again later.", t);
     }
 }
