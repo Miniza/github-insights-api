@@ -43,19 +43,69 @@ Built using **Hexagonal Architecture (Ports and Adapters)** to enforce clean bou
 | Logging     | Logstash Logback Encoder (structured JSON in prod)                                    |
 | Build       | Maven 3.9.9, Docker multi-stage build                                                 |
 
-## Quick Start
+## Getting Started
 
-### Docker (recommended)
+### Prerequisites
+
+- **Java 21** (e.g., [Eclipse Temurin](https://adoptium.net/))
+- **Git**
+- **Docker** (optional, for containerised run)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-org/vodacom-github.git
+cd vodacom-github
+```
+
+### 2. Run the Application
+
+#### Option A — Docker (recommended)
 
 ```bash
 docker build -t repo-profile .
 docker run -p 8080:8080 repo-profile
 ```
 
-### Maven (requires Maven 3.9+ and JDK 21)
+#### Option B — Maven Wrapper (no Maven install needed)
+
+**Linux / macOS:**
 
 ```bash
+chmod +x ./mvnw
 ./mvnw spring-boot:run
+```
+
+**Windows (PowerShell):**
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+### 3. Verify It's Running
+
+Open your browser or use `curl`:
+
+```bash
+curl http://localhost:8080/actuator/health
+# → {"status":"UP"}
+
+curl http://localhost:8080/api/v1/profiles/octocat
+```
+
+Swagger UI is available at: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+### 4. Run Tests
+
+```bash
+./mvnw test
+```
+
+### 5. Build a Production JAR
+
+```bash
+./mvnw clean package -DskipTests
+java -jar target/*.jar
 ```
 
 ## Running Tests

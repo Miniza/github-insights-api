@@ -58,24 +58,6 @@ jobs:
           distribution: "temurin"
           cache: maven
 
-      - name: OWASP Dependency-Check
-        run: |
-          chmod +x ./mvnw
-          ./mvnw org.owasp:dependency-check-maven:check \
-            -B \
-            -DfailBuildOnCVSS=7 \
-            -DsuppressionFile=owasp-suppressions.xml \
-            -Dformats=HTML,JSON
-        continue-on-error: true
-
-      - name: Upload Dependency-Check report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: target/dependency-check-report.*
-          retention-days: 30
-
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -86,7 +68,7 @@ jobs:
           output: "trivy-results.sarif"
 
       - name: Upload Trivy results to GitHub Security
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('trivy-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results.sarif"
