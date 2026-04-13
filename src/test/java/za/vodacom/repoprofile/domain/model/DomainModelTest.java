@@ -9,9 +9,8 @@ import static org.assertj.core.api.Assertions.*;
 class DomainModelTest {
 
     @Test
-    @DisplayName("Should create User record with all fields")
+    @DisplayName("User record creation")
     void testUserCreation() {
-        // Arrange & Act
         User user = new User(
                 "octocat",
                 "The Octocat",
@@ -35,9 +34,8 @@ class DomainModelTest {
     }
 
     @Test
-    @DisplayName("Should create Repo record with all fields")
+    @DisplayName("Repo record creation")
     void testRepoCreation() {
-        // Arrange & Act
         Repo repo = new Repo(
                 "Hello-World",
                 "Hello World!",
@@ -60,12 +58,10 @@ class DomainModelTest {
     }
 
     @Test
-    @DisplayName("Should create SearchRecord with all fields")
+    @DisplayName("SearchRecord creation")
     void testSearchRecordCreation() {
-        // Arrange
         java.time.Instant instant = java.time.Instant.now();
 
-        // Act
         SearchRecord record = new SearchRecord(
                 1L,
                 "octocat",
@@ -83,35 +79,28 @@ class DomainModelTest {
     }
 
     @Test
-    @DisplayName("Should compare User records for equality")
+    @DisplayName("User equality")
     void testUserEquality() {
-        // Arrange
         User user1 = new User("test", "Test", "Bio", "avatar", "url", 5, 10, 20);
         User user2 = new User("test", "Test", "Bio", "avatar", "url", 5, 10, 20);
         User user3 = new User("other", "Other", "Bio", "avatar", "url", 5, 10, 20);
-
-        // Assert
         assertThat(user1).isEqualTo(user2);
         assertThat(user1).isNotEqualTo(user3);
     }
 
     @Test
-    @DisplayName("Should compare Repo records for equality")
+    @DisplayName("Repo equality")
     void testRepoEquality() {
-        // Arrange
         Repo repo1 = new Repo("repo", "Desc", "url", "Java", 10, 1, 100L);
         Repo repo2 = new Repo("repo", "Desc", "url", "Java", 10, 1, 100L);
         Repo repo3 = new Repo("other", "Desc", "url", "Java", 10, 1, 100L);
-
-        // Assert
         assertThat(repo1).isEqualTo(repo2);
         assertThat(repo1).isNotEqualTo(repo3);
     }
 
     @Test
-    @DisplayName("Should handle null values in User")
+    @DisplayName("User with null name/bio")
     void testUserWithNullValues() {
-        // Act & Assert
         assertThatNoException().isThrownBy(() -> {
             User user = new User("test", null, null, null, null, 0, 0, 0);
             assertThat(user.name()).isNull();
@@ -120,9 +109,8 @@ class DomainModelTest {
     }
 
     @Test
-    @DisplayName("Should handle null values in Repo")
+    @DisplayName("Repo with null description/language")
     void testRepoWithNullValues() {
-        // Act & Assert
         assertThatNoException().isThrownBy(() -> {
             Repo repo = new Repo("repo", null, "url", null, 0, 0, 0L);
             assertThat(repo.description()).isNull();
@@ -131,21 +119,17 @@ class DomainModelTest {
     }
 
     @Test
-    @DisplayName("Should test Repo with zero values")
+    @DisplayName("Zero-valued repo fields")
     void testRepoWithZeroValues() {
-        // Arrange & Act
         Repo repo = new Repo("repo", "desc", "url", "Java", 0, 0, 0L);
-
-        // Assert
         assertThat(repo.stargazersCount()).isZero();
         assertThat(repo.forksCount()).isZero();
         assertThat(repo.size()).isZero();
     }
 
     @Test
-    @DisplayName("Should test SearchRecord with null summary")
+    @DisplayName("Null summary in SearchRecord")
     void testSearchRecordWithNullSummary() {
-        // Arrange & Act & Assert
         assertThatNoException().isThrownBy(() -> {
             SearchRecord record = new SearchRecord(1L, "user", null, java.time.Instant.now());
             assertThat(record.summary()).isNull();

@@ -56,9 +56,8 @@ class GitHubWebClientAdapterTest {
     }
 
     @Test
-    @DisplayName("Should fetch user successfully")
+    @DisplayName("Fetches and maps user correctly")
     void testFetchUserSuccess() {
-        // Arrange
         String username = "octocat";
         GitHubUserResponse userDto = new GitHubUserResponse(
                 "octocat", "The Octocat", "GitHub's mascot",
@@ -68,10 +67,8 @@ class GitHubWebClientAdapterTest {
 
         setupUserMocking(userDto);
 
-        // Act
         User user = adapter.fetchUser(username);
 
-        // Assert
         assertThat(user)
                 .isNotNull()
                 .extracting(User::login, User::name, User::bio)
@@ -83,9 +80,8 @@ class GitHubWebClientAdapterTest {
     }
 
     @Test
-    @DisplayName("Should throw NotFoundException when user not found")
+    @DisplayName("404 → NotFoundException")
     void testFetchUserNotFound() {
-        // Arrange
         String username = "nonexistent";
         WebClientResponseException exception = WebClientResponseException.create(
                 404, "Not Found", HttpHeaders.EMPTY, null, null
@@ -93,16 +89,14 @@ class GitHubWebClientAdapterTest {
 
         setupUserMockingWithException(exception);
 
-        // Act & Assert
         assertThatThrownBy(() -> adapter.fetchUser(username))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("GitHub user not found");
     }
 
     @Test
-    @DisplayName("Should throw ProviderApiException on API error")
+    @DisplayName("5xx → ProviderApiException")
     void testFetchUserProviderError() {
-        // Arrange
         String username = "testuser";
         WebClientResponseException exception = WebClientResponseException.create(
                 500, "Internal Server Error", HttpHeaders.EMPTY, null, null
@@ -110,16 +104,14 @@ class GitHubWebClientAdapterTest {
 
         setupUserMockingWithException(exception);
 
-        // Act & Assert
         assertThatThrownBy(() -> adapter.fetchUser(username))
                 .isInstanceOf(ProviderApiException.class)
                 .hasMessageContaining("GitHub API error");
     }
 
     @Test
-    @DisplayName("Should fetch repositories successfully")
+    @DisplayName("Fetches and maps repos")
     void testFetchRepositoriesSuccess() {
-        // Arrange
         String username = "octocat";
         List<GitHubRepoResponse> reposDtos = List.of(
                 new GitHubRepoResponse("Hello-World", "Hello World!", "https://github.com/octocat/Hello-World",
@@ -130,10 +122,8 @@ class GitHubWebClientAdapterTest {
 
         setupReposMocking(reposDtos, null);
 
-        // Act
         List<Repo> repos = adapter.fetchRepositories(username);
 
-        // Assert
         assertThat(repos)
                 .hasSize(2)
                 .extracting(Repo::name, Repo::language)
@@ -144,9 +134,8 @@ class GitHubWebClientAdapterTest {
     }
 
     @Test
-    @DisplayName("Should throw NotFoundException when repositories user not found")
+    @DisplayName("fetchRepositories 404 → NotFoundException")
     void testFetchRepositoriesNotFound() {
-        // Arrange
         String username = "nonexistent";
         WebClientResponseException exception = WebClientResponseException.create(
                 404, "Not Found", HttpHeaders.EMPTY, null, null
@@ -154,29 +143,24 @@ class GitHubWebClientAdapterTest {
 
         setupReposMockingWithException(exception);
 
-        // Act & Assert
         assertThatThrownBy(() -> adapter.fetchRepositories(username))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("GitHub user not found");
     }
 
     @Test
-    @DisplayName("Should handle empty repository list")
+    @DisplayName("Empty repo list")
     void testFetchRepositoriesEmpty() {
-        // Arrange
         setupReposMocking(List.of(), null);
 
-        // Act
         List<Repo> repos = adapter.fetchRepositories("emptyuser");
 
-        // Assert
         assertThat(repos).isEmpty();
     }
 
     @Test
-    @DisplayName("Should map repository fields correctly")
+    @DisplayName("All repo fields mapped correctly")
     void testRepositoryFieldMapping() {
-        // Arrange
         GitHubRepoResponse repoDto = new GitHubRepoResponse(
                 "test-repo",
                 "Test Description",
@@ -189,10 +173,8 @@ class GitHubWebClientAdapterTest {
 
         setupReposMocking(List.of(repoDto), null);
 
-        // Act
         List<Repo> repos = adapter.fetchRepositories("testuser");
 
-        // Assert
         assertThat(repos)
                 .hasSize(1)
                 .extracting(Repo::name, Repo::description, Repo::htmlUrl, Repo::language,
@@ -204,9 +186,8 @@ class GitHubWebClientAdapterTest {
     }
 
     @Test
-    @DisplayName("Should handle null description in repository")
+    @DisplayName("Null description preserved")
     void testRepositoryNullDescription() {
-        // Arrange
         GitHubRepoResponse repoDto = new GitHubRepoResponse(
                 "no-desc-repo",
                 null,
@@ -219,17 +200,15 @@ class GitHubWebClientAdapterTest {
 
         setupReposMocking(List.of(repoDto), null);
 
-        // Act
         List<Repo> repos = adapter.fetchRepositories("testuser");
 
-        // Assert
         assertThat(repos)
                 .hasSize(1)
                 .extracting(Repo::description)
                 .containsExactly((String) null);
     }
 
-    // ---- Helper methods for WebClient mocking (using doReturn to avoid generic issues) ----
+    // ---- WebClient mock helpers ----
 
     private void setupUserMocking(GitHubUserResponse userDto) {
         doReturn(requestHeadersUriSpec).when(webClient).get();

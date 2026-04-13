@@ -30,12 +30,12 @@ spring:
       enabled: true
       path: /h2-console
 
-# --- Cache TTL and size ---
+# Cache
 cache:
   max-size: 500
   ttl: 300s
 
-# --- GitHub provider configuration ---
+# GitHub API
 github:
   api:
     base-url: https://api.github.com
@@ -46,15 +46,13 @@ github:
     max-pages: 50
     per-page: 100
 
-# --- Search history configuration ---
 search-history:
   max-records: 50
 
-# --- Language strategy: byRepoCount | byRepoSize ---
 language:
   strategy: byRepoCount #byRepoSize
 
-# --- Resilience4j ---
+# Resilience4j
 resilience4j:
   circuitbreaker:
     instances:
@@ -87,7 +85,6 @@ resilience4j:
         limit-refresh-period: 60s
         timeout-duration: 5s
 
-# --- OpenAPI / Swagger ---
 springdoc:
   api-docs:
     path: /api-docs
@@ -95,7 +92,6 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
 
-# --- Actuator ---
 management:
   endpoints:
     web:

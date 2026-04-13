@@ -14,9 +14,8 @@ import static org.assertj.core.api.Assertions.*;
 class ApplicationDtoTest {
 
     @Test
-    @DisplayName("Should create RepoResponse with all fields")
+    @DisplayName("RepoResponse record fields")
     void testRepoResponseCreation() {
-        // Act
         RepoResponse repo = new RepoResponse(
                 "Hello-World",
                 "Hello World!",
@@ -39,15 +38,13 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should create ProfileResponse with all fields")
+    @DisplayName("ProfileResponse record fields")
     void testProfileResponseCreation() {
-        // Arrange
         List<RepoResponse> repos = List.of(
                 new RepoResponse("repo1", "Desc1", "url1", "Java", 100, 5, 1000L),
                 new RepoResponse("repo2", "Desc2", "url2", "Python", 50, 3, 500L)
         );
 
-        // Act
         ProfileResponse profile = new ProfileResponse(
                 "octocat",
                 "The Octocat",
@@ -71,12 +68,10 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should create SearchSummary with all fields")
+    @DisplayName("SearchSummary record fields")
     void testSearchSummaryCreation() {
-        // Arrange
         ZonedDateTime now = ZonedDateTime.now();
 
-        // Act
         SearchSummary summary = new SearchSummary(
                 1L,
                 "octocat",
@@ -94,12 +89,10 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should create ErrorResponse with all fields")
+    @DisplayName("ErrorResponse record fields")
     void testErrorResponseCreation() {
-        // Arrange
         Instant now = Instant.now();
 
-        // Act
         ErrorResponse error = new ErrorResponse(
                 404,
                 "Not Found",
@@ -117,9 +110,8 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should create ErrorResponse using factory method")
+    @DisplayName("ErrorResponse.of() factory")
     void testErrorResponseFactory() {
-        // Act
         ErrorResponse error = ErrorResponse.of(502, "Bad Gateway", "Provider unavailable");
 
         // Assert
@@ -132,9 +124,8 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should handle null description in RepoResponse")
+    @DisplayName("Null description in RepoResponse")
     void testRepoResponseNullDescription() {
-        // Act
         RepoResponse repo = new RepoResponse("repo", null, "url", "Java", 10, 1, 100L);
 
         // Assert
@@ -142,9 +133,8 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should handle null language in RepoResponse")
+    @DisplayName("Null language in RepoResponse")
     void testRepoResponseNullLanguage() {
-        // Act
         RepoResponse repo = new RepoResponse("repo", "Desc", "url", null, 10, 1, 100L);
 
         // Assert
@@ -152,9 +142,8 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should handle null topLanguage in ProfileResponse")
+    @DisplayName("Null topLanguage in ProfileResponse")
     void testProfileResponseNullTopLanguage() {
-        // Act
         ProfileResponse profile = new ProfileResponse(
                 "user", "Name", "Bio", "avatar", "url", 5, 10, 20, null, List.of()
         );
@@ -164,9 +153,8 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should create ProfileResponse with empty repositories")
+    @DisplayName("Empty repositories list")
     void testProfileResponseEmptyRepos() {
-        // Act
         ProfileResponse profile = new ProfileResponse(
                 "user", "Name", "Bio", "avatar", "url", 0, 0, 0, null, List.of()
         );
@@ -176,25 +164,19 @@ class ApplicationDtoTest {
     }
 
     @Test
-    @DisplayName("Should test RepoResponse equality")
+    @DisplayName("RepoResponse equality")
     void testRepoResponseEquality() {
-        // Arrange
         RepoResponse repo1 = new RepoResponse("repo", "Desc", "url", "Java", 10, 1, 100L);
         RepoResponse repo2 = new RepoResponse("repo", "Desc", "url", "Java", 10, 1, 100L);
-
-        // Assert
         assertThat(repo1).isEqualTo(repo2);
     }
 
     @Test
-    @DisplayName("Should test SearchSummary equality")
+    @DisplayName("SearchSummary equality")
     void testSearchSummaryEquality() {
-        // Arrange
         ZonedDateTime time = ZonedDateTime.now();
         SearchSummary summary1 = new SearchSummary(1L, "user", "summary", time);
         SearchSummary summary2 = new SearchSummary(1L, "user", "summary", time);
-
-        // Assert
         assertThat(summary1).isEqualTo(summary2);
     }
 

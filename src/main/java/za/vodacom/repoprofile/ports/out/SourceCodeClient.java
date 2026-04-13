@@ -6,8 +6,7 @@ import za.vodacom.repoprofile.domain.model.User;
 import java.util.List;
 
 /**
- * Driven port – abstraction over any Git hosting provider (GitHub, GitLab, Bitbucket…).
- * Each adapter implements this interface for a specific provider.
+ * Abstraction over a Git hosting provider (GitHub, GitLab, Bitbucket…).
  */
 public interface SourceCodeClient {
 

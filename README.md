@@ -1,6 +1,6 @@
 # Profile Insights API
 
-A production-ready Spring Boot 3 application that consumes public source-code hosting APIs (GitHub, GitLab, Bitbucket) and exposes clean REST endpoints for user profile insights, repository listings, and language analytics — with JPA-backed search history.
+A Spring Boot 3 application that consumes public source-code hosting APIs (GitHub, GitLab, Bitbucket) and exposes clean REST endpoints for user profile insights, repository listings, and language analytics — with JPA-backed search history.
 
 ## Architecture
 

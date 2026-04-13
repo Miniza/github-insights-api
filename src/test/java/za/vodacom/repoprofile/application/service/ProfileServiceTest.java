@@ -66,9 +66,8 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Should fetch user profile successfully with top language")
+    @DisplayName("Fetches user profile with top language")
     void testGetProfileSuccess() {
-        // Arrange
         String username = "octocat";
         String provider = "github";
         User user = new User("octocat", "The Octocat", "GitHub's mascot", "https://avatars.githubusercontent.com/u/1?", 
@@ -85,10 +84,8 @@ class ProfileServiceTest {
         when(sourceCodeClient.fetchRepositories(username)).thenReturn(repos);
         when(languageStrategy.determineTopLanguage(repos)).thenReturn("Java");
 
-        // Act
         ProfileResponse response = profileService.getProfile(username, provider);
 
-        // Assert
         assertThat(response)
                 .isNotNull()
                 .extracting(ProfileResponse::login, ProfileResponse::name, ProfileResponse::topLanguage)
@@ -106,9 +103,8 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Should sort repositories by stars in descending order")
+    @DisplayName("Repos sorted by stars descending")
     void testRepositoriesSortedByStars() {
-        // Arrange
         String username = "testuser";
         String provider = "gitlab";
         User user = new User("testuser", "Test User", "Test", "https://example.com/avatar", 
@@ -124,19 +120,16 @@ class ProfileServiceTest {
         when(sourceCodeClient.fetchRepositories(username)).thenReturn(repos);
         when(languageStrategy.determineTopLanguage(repos)).thenReturn("Python");
 
-        // Act
         ProfileResponse response = profileService.getProfile(username, provider);
 
-        // Assert
         assertThat(response.repositories())
                 .extracting(RepoResponse::stargazersCount)
                 .containsExactly(150, 50, 10);
     }
 
     @Test
-    @DisplayName("Should fetch repositories with pagination")
+    @DisplayName("Paginated repo fetch returns correct page metadata")
     void testGetRepositoriesWithPagination() {
-        // Arrange
         String username = "testuser";
         String provider = "github";
         int page = 1;
@@ -148,10 +141,8 @@ class ProfileServiceTest {
         when(sourceCodeClient.fetchUser(username)).thenReturn(user);
         when(sourceCodeClient.fetchRepositories(username, page, perPage)).thenReturn(pageRepos);
 
-        // Act
         PagedResponse<RepoResponse> response = profileService.getRepositories(username, provider, page, perPage);
 
-        // Assert
         assertThat(response)
                 .isNotNull()
                 .extracting(PagedResponse::page, PagedResponse::totalItems, PagedResponse::totalPages)
@@ -166,9 +157,8 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Should handle empty repository list")
+    @DisplayName("Empty repo list")
     void testGetRepositoriesEmpty() {
-        // Arrange
         String username = "emptyuser";
         String provider = "github";
         int page = 1;
@@ -179,28 +169,23 @@ class ProfileServiceTest {
         when(sourceCodeClient.fetchUser(username)).thenReturn(user);
         when(sourceCodeClient.fetchRepositories(username, page, perPage)).thenReturn(List.of());
 
-        // Act
         PagedResponse<RepoResponse> response = profileService.getRepositories(username, provider, page, perPage);
 
-        // Assert
         assertThat(response.content()).isEmpty();
         assertThat(response.totalItems()).isZero();
         verify(eventPublisher).publishEvent(any(SearchPerformedEvent.class));
     }
 
     @Test
-    @DisplayName("Should retrieve search history")
+    @DisplayName("Search history retrieval")
     void testGetSearchHistory() {
-        // Arrange
         SearchRecord record1 = new SearchRecord(1L, "octocat", "octocat – 8 repos", Instant.now().minusSeconds(86400));
         SearchRecord record2 = new SearchRecord(2L, "torvalds", "torvalds – 10 repos", Instant.now());
 
         when(searchHistoryRepository.findRecentSearches(50)).thenReturn(List.of(record1, record2));
 
-        // Act
         List<SearchSummary> history = profileService.getSearchHistory();
 
-        // Assert
         assertThat(history)
                 .hasSize(2)
                 .allSatisfy(summary -> assertThat(summary).isNotNull());
@@ -209,23 +194,19 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Should handle search history with no records")
+    @DisplayName("Empty search history")
     void testGetSearchHistoryEmpty() {
-        // Arrange
         when(searchHistoryRepository.findRecentSearches(50)).thenReturn(List.of());
 
-        // Act
         List<SearchSummary> history = profileService.getSearchHistory();
 
-        // Assert
         assertThat(history).isEmpty();
         verify(searchHistoryRepository).findRecentSearches(50);
     }
 
     @Test
-    @DisplayName("Should resolve correct provider client")
+    @DisplayName("Resolves correct provider client")
     void testClientResolverIntegration() {
-        // Arrange
         String username = "testuser";
         User user = new User("testuser", "Test", "Bio", "avatar", "url", 5, 10, 20);
 
@@ -234,23 +215,18 @@ class ProfileServiceTest {
         when(sourceCodeClient.fetchRepositories(username)).thenReturn(List.of());
         when(languageStrategy.determineTopLanguage(any())).thenReturn("Java");
 
-        // Act
         profileService.getProfile(username, "github");
 
-        // Assert
         verify(clientResolver).resolve("github");
         verify(sourceCodeClient).fetchUser(username);
         verify(sourceCodeClient).fetchRepositories(username);
     }
 
     @Test
-    @DisplayName("Should throw exception for unknown language strategy")
+    @DisplayName("Unknown language strategy throws on construction")
     void testUnknownStrategyThrowsException() {
-        // Arrange
         Map<String, LanguageStrategy> strategies = new HashMap<>();
         strategies.put("byRepoCount", languageStrategy);
-
-        // Act & Assert
         assertThatThrownBy(() -> new ProfileService(
                 clientResolver,
                 searchHistoryRepository,

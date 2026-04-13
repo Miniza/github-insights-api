@@ -14,9 +14,8 @@ class ByRepoSizeStrategyTest {
     private final LanguageStrategy strategy = new ByRepoSizeStrategy();
 
     @Test
-    @DisplayName("Should determine top language by total repository size")
+    @DisplayName("Top language by total size")
     void testDetermineTopLanguageBySize() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("repo1", "desc", "url", "Java", 10, 1, 1000),
                 new Repo("repo2", "desc", "url", "Java", 10, 1, 2000),
@@ -24,64 +23,43 @@ class ByRepoSizeStrategyTest {
                 new Repo("repo4", "desc", "url", "Go", 10, 1, 800)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert - Java total: 3000, Python: 500, Go: 800
-        assertThat(topLanguage).isEqualTo("Java");
+        // Java: 3000, Python: 500, Go: 800
+        assertThat(strategy.determineTopLanguage(repos)).isEqualTo("Java");
     }
 
     @Test
-    @DisplayName("Should return null for empty repository list")
+    @DisplayName("Empty list returns null")
     void testDetermineTopLanguageEmpty() {
-        // Arrange
-        List<Repo> repos = List.of();
-
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert
-        assertThat(topLanguage).isNull();
+        assertThat(strategy.determineTopLanguage(List.of())).isNull();
     }
 
     @Test
-    @DisplayName("Should ignore repositories with null language")
+    @DisplayName("Null languages excluded")
     void testIgnoreNullLanguage() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("repo1", "desc", "url", null, 10, 1, 5000),
                 new Repo("repo2", "desc", "url", "Java", 10, 1, 2000),
                 new Repo("repo3", "desc", "url", null, 10, 1, 3000)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert
-        assertThat(topLanguage).isEqualTo("Java");
+        assertThat(strategy.determineTopLanguage(repos)).isEqualTo("Java");
     }
 
     @Test
-    @DisplayName("Should ignore repositories with blank language")
+    @DisplayName("Blank languages excluded")
     void testIgnoreBlankLanguage() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("repo1", "desc", "url", "  ", 10, 1, 5000),
                 new Repo("repo2", "desc", "url", "Java", 10, 1, 2000),
                 new Repo("repo3", "desc", "url", "", 10, 1, 3000)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert
-        assertThat(topLanguage).isEqualTo("Java");
+        assertThat(strategy.determineTopLanguage(repos)).isEqualTo("Java");
     }
 
     @Test
-    @DisplayName("Should sum sizes correctly for multiple repositories of same language")
+    @DisplayName("Sums sizes per language")
     void testSumMultipleLanguages() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("java1", "desc", "url", "Java", 10, 1, 100),
                 new Repo("java2", "desc", "url", "Java", 10, 1, 200),
@@ -92,77 +70,50 @@ class ByRepoSizeStrategyTest {
                 new Repo("rust1", "desc", "url", "Rust", 10, 1, 50)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert - Java: 600, Python: 400, Go: 600, Rust: 50
-        // Go and Java are tied at 600, should return one of them
-        assertThat(topLanguage).isIn("Java", "Go");
+        // Java: 600, Python: 400, Go: 600, Rust: 50 — tie between Java and Go
+        assertThat(strategy.determineTopLanguage(repos)).isIn("Java", "Go");
     }
 
     @Test
-    @DisplayName("Should handle single repository")
+    @DisplayName("Single repo")
     void testSingleRepository() {
-        // Arrange
-        List<Repo> repos = List.of(
-                new Repo("solo-repo", "desc", "url", "Rust", 10, 1, 500)
-        );
-
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert
-        assertThat(topLanguage).isEqualTo("Rust");
+        var repos = List.of(new Repo("solo-repo", "desc", "url", "Rust", 10, 1, 500));
+        assertThat(strategy.determineTopLanguage(repos)).isEqualTo("Rust");
     }
 
     @Test
-    @DisplayName("Should correctly handle large sizes")
+    @DisplayName("Large sizes handled correctly")
     void testLargeSizes() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("repo1", "desc", "url", "Java", 10, 1, 1000000),
                 new Repo("repo2", "desc", "url", "Python", 10, 1, 500000),
                 new Repo("repo3", "desc", "url", "Go", 10, 1, 250000)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert
-        assertThat(topLanguage).isEqualTo("Java");
+        assertThat(strategy.determineTopLanguage(repos)).isEqualTo("Java");
     }
 
     @Test
-    @DisplayName("Should handle zero-sized repositories")
+    @DisplayName("Zero-sized repos lose to non-zero")
     void testZeroSizedRepositories() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("repo1", "desc", "url", "Java", 10, 1, 0),
                 new Repo("repo2", "desc", "url", "Java", 10, 1, 0),
                 new Repo("repo3", "desc", "url", "Python", 10, 1, 100)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert - Python has the highest total size
-        assertThat(topLanguage).isEqualTo("Python");
+        assertThat(strategy.determineTopLanguage(repos)).isEqualTo("Python");
     }
 
     @Test
-    @DisplayName("Should return null when all languages are null or blank")
+    @DisplayName("All null/blank → null")
     void testAllLanguagesNullOrBlank() {
-        // Arrange
         List<Repo> repos = List.of(
                 new Repo("repo1", "desc", "url", null, 10, 1, 5000),
                 new Repo("repo2", "desc", "url", "  ", 10, 1, 2000),
                 new Repo("repo3", "desc", "url", "", 10, 1, 3000)
         );
 
-        // Act
-        String topLanguage = strategy.determineTopLanguage(repos);
-
-        // Assert
-        assertThat(topLanguage).isNull();
+        assertThat(strategy.determineTopLanguage(repos)).isNull();
     }
 }

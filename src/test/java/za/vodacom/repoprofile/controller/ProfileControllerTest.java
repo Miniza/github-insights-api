@@ -36,9 +36,8 @@ class ProfileControllerTest {
     private ProfileUseCase profileUseCase;
 
     @Test
-    @DisplayName("Should retrieve user profile successfully")
+    @DisplayName("GET /profiles/{username} - success")
     void testGetProfileSuccess() throws Exception {
-        // Arrange
         String username = "octocat";
         String provider = "github";
 
@@ -60,7 +59,6 @@ class ProfileControllerTest {
 
         when(profileUseCase.getProfile(username, provider)).thenReturn(profile);
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/{username}", username)
                         .param("provider", provider)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -76,15 +74,13 @@ class ProfileControllerTest {
     }
 
     @Test
-    @DisplayName("Should use default provider when not specified")
+    @DisplayName("Defaults to github provider")
     void testGetProfileDefaultProvider() throws Exception {
-        // Arrange
         String username = "testuser";
         ProfileResponse profile = new ProfileResponse("testuser", "Test", "Bio", "avatar", "url", 5, 10, 20, "Java", List.of());
 
         when(profileUseCase.getProfile(username, "github")).thenReturn(profile);
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/{username}", username)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -92,49 +88,42 @@ class ProfileControllerTest {
     }
 
     @Test
-    @DisplayName("Should return 404 when user not found")
+    @DisplayName("404 when user not found")
     void testGetProfileNotFound() throws Exception {
-        // Arrange
         String username = "nonexistent";
         when(profileUseCase.getProfile(username, "github"))
                 .thenThrow(new NotFoundException("User not found"));
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/{username}", username)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("Should return 502 on provider API error")
+    @DisplayName("502 on provider API error")
     void testGetProfileProviderError() throws Exception {
-        // Arrange
         String username = "testuser";
         when(profileUseCase.getProfile(username, "github"))
                 .thenThrow(new ProviderApiException("Provider API error", new Exception()));
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/{username}", username)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadGateway());
     }
 
     @Test
-    @DisplayName("Should validate username format")
+    @DisplayName("Rejects invalid username format")
     void testGetProfileInvalidUsername() throws Exception {
-        // Arrange
         String invalidUsername = "invalid@username!";
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/{username}", invalidUsername)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Should retrieve repositories with pagination")
+    @DisplayName("GET /profiles/{username}/repos - paginated")
     void testGetRepositoriesSuccess() throws Exception {
-        // Arrange
         String username = "octocat";
         String provider = "github";
         int page = 1;
@@ -149,7 +138,6 @@ class ProfileControllerTest {
         PagedResponse<RepoResponse> response = PagedResponse.of(repos, page, perPage);
         when(profileUseCase.getRepositories(username, provider, page, perPage)).thenReturn(response);
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/{username}/repos", username)
                         .param("provider", provider)
                         .param("page", String.valueOf(page))
@@ -164,18 +152,15 @@ class ProfileControllerTest {
     }
 
     @Test
-    @DisplayName("Should validate pagination parameters")
+    @DisplayName("Pagination param validation (page < 1, perPage > 100)")
     void testGetRepositoriesBadPagination() throws Exception {
-        // Arrange
         String username = "testuser";
 
-        // Act & Assert - page must be at least 1
         mockMvc.perform(get("/api/v1/profiles/{username}/repos", username)
                         .param("page", "0")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
-        // Act & Assert - perPage must not exceed 100
         mockMvc.perform(get("/api/v1/profiles/{username}/repos", username)
                         .param("perPage", "101")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -183,15 +168,13 @@ class ProfileControllerTest {
     }
 
     @Test
-    @DisplayName("Should retrieve search history")
+    @DisplayName("GET /searches - returns history")
     void testGetSearchHistorySuccess() throws Exception {
-        // Arrange
         SearchSummary summary1 = new SearchSummary(1L, "octocat", "octocat – 8 repos", ZonedDateTime.now().minusDays(1));
         SearchSummary summary2 = new SearchSummary(2L, "torvalds", "torvalds – 10 repos", ZonedDateTime.now());
 
         when(profileUseCase.getSearchHistory()).thenReturn(List.of(summary1, summary2));
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/searches")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -202,12 +185,10 @@ class ProfileControllerTest {
     }
 
     @Test
-    @DisplayName("Should return empty search history")
+    @DisplayName("Empty search history returns []")
     void testGetSearchHistoryEmpty() throws Exception {
-        // Arrange
         when(profileUseCase.getSearchHistory()).thenReturn(List.of());
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/searches")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -215,22 +196,19 @@ class ProfileControllerTest {
     }
 
     @Test
-    @DisplayName("Should accept different provider names")
+    @DisplayName("Accepts gitlab and bitbucket as provider")
     void testGetProfileMultipleProviders() throws Exception {
-        // Arrange
         String username = "testuser";
         ProfileResponse profile = new ProfileResponse("testuser", "Test", "Bio", "avatar", "url", 5, 10, 20, "Java", List.of());
 
         when(profileUseCase.getProfile(username, "gitlab")).thenReturn(profile);
         when(profileUseCase.getProfile(username, "bitbucket")).thenReturn(profile);
 
-        // Act & Assert for GitLab
         mockMvc.perform(get("/api/v1/profiles/{username}", username)
                         .param("provider", "gitlab")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        // Act & Assert for Bitbucket
         mockMvc.perform(get("/api/v1/profiles/{username}", username)
                         .param("provider", "bitbucket")
                         .contentType(MediaType.APPLICATION_JSON))

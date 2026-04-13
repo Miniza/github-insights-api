@@ -9,30 +9,22 @@ import static org.assertj.core.api.Assertions.*;
 class CustomExceptionTest {
 
     @Test
-    @DisplayName("Should create NotFoundException with message")
+    @DisplayName("NotFoundException with message")
     void testNotFoundExceptionCreation() {
-        // Arrange
         String message = "User not found";
 
-        // Act
         NotFoundException exception = new NotFoundException(message);
-
-        // Assert
         assertThat(exception)
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage(message);
     }
 
     @Test
-    @DisplayName("Should create ProviderApiException with message only")
+    @DisplayName("ProviderApiException - message only")
     void testProviderApiExceptionWithMessageOnly() {
-        // Arrange
         String message = "GitHub API error";
 
-        // Act
         ProviderApiException exception = new ProviderApiException(message);
-
-        // Assert
         assertThat(exception)
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage(message)
@@ -40,16 +32,12 @@ class CustomExceptionTest {
     }
 
     @Test
-    @DisplayName("Should create ProviderApiException with message and cause")
+    @DisplayName("ProviderApiException with cause")
     void testProviderApiExceptionWithCause() {
-        // Arrange
         String message = "GitHub API error";
         RuntimeException cause = new RuntimeException("Connection timeout");
 
-        // Act
         ProviderApiException exception = new ProviderApiException(message, cause);
-
-        // Assert
         assertThat(exception)
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage(message)
@@ -57,9 +45,8 @@ class CustomExceptionTest {
     }
 
     @Test
-    @DisplayName("Should throw NotFoundException")
+    @DisplayName("Throw + catch NotFoundException")
     void testThrowNotFoundException() {
-        // Act & Assert
         assertThatThrownBy(() -> {
             throw new NotFoundException("Resource not found");
         })
@@ -68,9 +55,8 @@ class CustomExceptionTest {
     }
 
     @Test
-    @DisplayName("Should throw ProviderApiException")
+    @DisplayName("Throw + catch ProviderApiException")
     void testThrowProviderApiException() {
-        // Act & Assert
         assertThatThrownBy(() -> {
             throw new ProviderApiException("API unreachable");
         })

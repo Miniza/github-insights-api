@@ -22,9 +22,8 @@ class ProfileMapperTest {
     private static final ZoneId SAST = ZoneId.of("Africa/Johannesburg");
 
     @Test
-    @DisplayName("Should map Repo to RepoResponse correctly")
+    @DisplayName("Repo → RepoResponse mapping")
     void testToRepoResponse() {
-        // Arrange
         Repo repo = new Repo(
                 "Hello-World",
                 "Hello World!",
@@ -62,9 +61,8 @@ class ProfileMapperTest {
     }
 
     @Test
-    @DisplayName("Should map Repo with null description to RepoResponse")
+    @DisplayName("Null description preserved in RepoResponse")
     void testToRepoResponseNullDescription() {
-        // Arrange
         Repo repo = new Repo(
                 "C-Sharp-Sample",
                 null,
@@ -75,10 +73,8 @@ class ProfileMapperTest {
                 1L
         );
 
-        // Act
         RepoResponse response = ProfileMapper.toRepoResponse(repo);
 
-        // Assert
         assertThat(response)
                 .isNotNull()
                 .extracting(RepoResponse::name, RepoResponse::description)
@@ -86,7 +82,7 @@ class ProfileMapperTest {
     }
 
     @Test
-    @DisplayName("Should map User and repos to ProfileResponse correctly")
+    @DisplayName("User + repos → ProfileResponse")
     void testToProfileResponse() {
         // Arrange
         User user = new User(
@@ -105,10 +101,8 @@ class ProfileMapperTest {
                 new RepoResponse("C-Sharp-Sample", null, "https://github.com/octocat/C-Sharp-Sample", "C#", 0, 0, 1L)
         );
 
-        // Act
         ProfileResponse response = ProfileMapper.toProfileResponse(user, "Java", repos);
 
-        // Assert
         assertThat(response)
                 .isNotNull()
                 .extracting(
@@ -138,16 +132,13 @@ class ProfileMapperTest {
     }
 
     @Test
-    @DisplayName("Should map ProfileResponse with null top language")
+    @DisplayName("Null top language in ProfileResponse")
     void testToProfileResponseNullTopLanguage() {
-        // Arrange
         User user = new User("testuser", "Test User", "Bio", "avatar", "url", 5, 10, 20);
         List<RepoResponse> repos = List.of();
 
-        // Act
         ProfileResponse response = ProfileMapper.toProfileResponse(user, null, repos);
 
-        // Assert
         assertThat(response)
                 .isNotNull()
                 .extracting(ProfileResponse::topLanguage)
@@ -155,9 +146,8 @@ class ProfileMapperTest {
     }
 
     @Test
-    @DisplayName("Should map SearchRecord to SearchSummary with timezone conversion")
+    @DisplayName("SearchRecord → SearchSummary with SAST timezone")
     void testToSearchSummary() {
-        // Arrange
         Instant instant = Instant.parse("2024-01-15T10:30:00Z");
         SearchRecord record = new SearchRecord(
                 1L,
@@ -166,10 +156,8 @@ class ProfileMapperTest {
                 instant
         );
 
-        // Act
         SearchSummary summary = ProfileMapper.toSearchSummary(record);
 
-        // Assert
         assertThat(summary)
                 .isNotNull()
                 .extracting(SearchSummary::id, SearchSummary::username, SearchSummary::summary)
@@ -184,9 +172,8 @@ class ProfileMapperTest {
     }
 
     @Test
-    @DisplayName("Should build summary with all components")
+    @DisplayName("buildSummary format")
     void testBuildSummary() {
-        // Arrange
         String username = "octocat";
         int repoCount = 8;
         String topLanguage = "Java";

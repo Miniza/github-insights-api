@@ -50,7 +50,7 @@ public ProfileService(
 
 ### Why not just pick one?
 
-A senior engineer demonstrates **design thinking**, not just "it works." The Strategy pattern shows:
+The Strategy pattern here lets us support both interpretations without hard-coding either:
 
 - **Open/Closed Principle:** Adding a new algorithm (e.g., `ByCommitFrequency`) requires zero changes to existing code
 - **Testability:** Each strategy is independently unit-testable
@@ -76,4 +76,3 @@ A senior engineer demonstrates **design thinking**, not just "it works." The Str
 - **Positive:** Adding new strategies (e.g., by commit count via another API call) is trivial
 - **Positive:** Clean separation of domain logic from the service layer
 - **Negative:** Two classes instead of one — slight overhead for a simple algorithm
-- **Trade-off accepted:** Demonstrates design principles appropriate for a senior/staff submission

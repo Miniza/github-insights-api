@@ -68,7 +68,6 @@ class ProfileIntegrationTest {
     @Test
     @DisplayName("GET /profiles/{username} returns profile with top language via GitHub API")
     void testFullProfileLifecycle() throws Exception {
-        // Arrange — mock GitHub user response
         Map<String, Object> userResponse = Map.of(
                 "login", "testuser",
                 "name", "Test User",
@@ -80,7 +79,6 @@ class ProfileIntegrationTest {
                 "following", 50
         );
 
-        // Arrange — mock GitHub repos response
         List<Map<String, Object>> reposResponse = List.of(
                 Map.of("name", "alpha", "description", "Alpha project", "html_url", "https://github.com/testuser/alpha",
                         "language", "Java", "stargazers_count", 50, "forks_count", 10, "size", 2000),
@@ -93,7 +91,6 @@ class ProfileIntegrationTest {
         enqueueJson(userResponse);
         enqueueJson(reposResponse);
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/testuser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.login").value("testuser"))
@@ -116,7 +113,6 @@ class ProfileIntegrationTest {
     @Test
     @DisplayName("GET /profiles/{username}/repos returns paginated repos from GitHub API")
     void testPaginatedRepos() throws Exception {
-        // Arrange — mock user + repos
         Map<String, Object> userResponse = Map.of(
                 "login", "pageuser",
                 "name", "Page User",
@@ -136,7 +132,6 @@ class ProfileIntegrationTest {
         enqueueJson(userResponse);
         enqueueJson(reposResponse);
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/pageuser/repos")
                         .param("page", "1")
                         .param("perPage", "5"))
@@ -151,13 +146,11 @@ class ProfileIntegrationTest {
     @Test
     @DisplayName("GET /profiles/{username} returns 404 for non-existent user")
     void testUserNotFound() throws Exception {
-        // Arrange — GitHub returns 404
         mockGitHub.enqueue(new MockResponse()
                 .setResponseCode(404)
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .setBody("{\"message\":\"Not Found\"}"));
 
-        // Act & Assert
         mockMvc.perform(get("/api/v1/profiles/nonexistent"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))

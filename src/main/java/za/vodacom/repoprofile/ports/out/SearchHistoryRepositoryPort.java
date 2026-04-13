@@ -5,7 +5,7 @@ import za.vodacom.repoprofile.domain.model.SearchRecord;
 import java.util.List;
 
 /**
- * Driven port \u2013 persistence abstraction for search history.
+ * Persistence abstraction for search history.
  */
 public interface SearchHistoryRepositoryPort {
 

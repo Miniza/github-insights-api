@@ -8,8 +8,8 @@ import za.vodacom.repoprofile.application.dto.SearchSummary;
 import java.util.List;
 
 /**
- * Driving port – defines all use cases exposed by the application layer.
- * Provider-agnostic: the {@code provider} parameter selects the source (github, gitlab, bitbucket).
+ * Use cases exposed by the application layer.
+ * The {@code provider} parameter selects the source (github, gitlab, bitbucket).
  */
 public interface ProfileUseCase {
 
