@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-04-13  
-**Deciders:** Development Team
+**Deciders:** Miniza
 
 ## Context
 
@@ -109,9 +109,3 @@ This means:
 - **Positive:** All thresholds are externalised to `application.yml` — tunable without code changes
 - **Negative:** Adds Resilience4j + AOP dependencies
 - **Negative:** Fallback methods add code to the adapter layer
-
-## References
-
-- Resilience4j Documentation: [resilience4j.readme.io](https://resilience4j.readme.io/)
-- Michael Nygard, _Release It!_ (2018) — Circuit Breaker pattern
-- AWS Architecture Blog: "Exponential Backoff and Jitter"

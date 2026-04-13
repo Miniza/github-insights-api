@@ -54,7 +54,7 @@ Built using **Hexagonal Architecture (Ports and Adapters)** to enforce clean bou
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/vodacom-github.git
+git clone https://github.com/Miniza/github-insights-api.git
 cd vodacom-github
 ```
 
@@ -67,7 +67,9 @@ docker build -t repo-profile .
 docker run -p 8080:8080 repo-profile
 ```
 
-#### Option B — Maven Wrapper (no Maven install needed)
+#### Option B — Maven Wrapper
+
+> **Note:** Corporate environments may block script execution (e.g. `Permission denied` on `./mvnw` or PowerShell execution policy restrictions). If you encounter this, use **Docker** (Option A) or **run directly from your IDE** (Option C) instead.
 
 **Linux / macOS:**
 
@@ -81,6 +83,13 @@ chmod +x ./mvnw
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
+
+#### Option C — Run from IDE
+
+Open the project in **VS Code** or **IntelliJ IDEA** and run `RepoProfileApplication.java` directly:
+
+- **IntelliJ IDEA:** Open the file and click the green ▶ play button next to the `main` method, or right-click → _Run 'RepoProfileApplication'_.
+- **VS Code:** With the [Java Extension Pack](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) installed, open the file and click the **Run** link above `main`, or press `F5`.
 
 ### 3. Verify It's Running
 
@@ -146,19 +155,20 @@ java "-Dmaven.multiModuleProjectDirectory=$projDir" -cp .mvn/wrapper/maven-wrapp
 
 The test suite covers the following layers:
 
-| Test Class                   | Layer               | What it tests                                                 |
-| ---------------------------- | ------------------- | ------------------------------------------------------------- |
-| `ProfileServiceTest`         | Application Service | Profile/repo fetching, search history, event publishing       |
-| `ProfileControllerTest`      | REST Controller     | Endpoint routing, validation, error responses (`@WebMvcTest`) |
-| `GitHubWebClientAdapterTest` | Adapter             | WebClient mocking, user/repo mapping, error handling          |
-| `ProfileMapperTest`          | Mapper              | Domain→DTO mapping, timezone conversion, summary building     |
-| `ByRepoCountStrategyTest`    | Domain Strategy     | Language ranking by repository count                          |
-| `ByRepoSizeStrategyTest`     | Domain Strategy     | Language ranking by total repo size                           |
-| `ApplicationDtoTest`         | DTOs                | Record creation, equality, factory methods                    |
-| `PagedResponseTest`          | DTOs                | Pagination logic, edge cases, type safety                     |
-| `DomainModelTest`            | Domain Models       | Record creation, equality for `User`, `Repo`, `SearchRecord`  |
-| `CustomExceptionTest`        | Exceptions          | Exception construction and message propagation                |
-| `GlobalExceptionHandlerTest` | Exception Handler   | HTTP status mapping for all handled exception types           |
+| Test Class                   | Layer               | What it tests                                                                                             |
+| ---------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ProfileServiceTest`         | Application Service | Profile/repo fetching, search history, event publishing                                                   |
+| `ProfileControllerTest`      | REST Controller     | Endpoint routing, validation, error responses (`@WebMvcTest`)                                             |
+| `GitHubWebClientAdapterTest` | Adapter             | WebClient mocking, user/repo mapping, error handling                                                      |
+| `ProfileMapperTest`          | Mapper              | Domain→DTO mapping, timezone conversion, summary building                                                 |
+| `ByRepoCountStrategyTest`    | Domain Strategy     | Language ranking by repository count                                                                      |
+| `ByRepoSizeStrategyTest`     | Domain Strategy     | Language ranking by total repo size                                                                       |
+| `ApplicationDtoTest`         | DTOs                | Record creation, equality, factory methods                                                                |
+| `PagedResponseTest`          | DTOs                | Pagination logic, edge cases, type safety                                                                 |
+| `DomainModelTest`            | Domain Models       | Record creation, equality for `User`, `Repo`, `SearchRecord`                                              |
+| `CustomExceptionTest`        | Exceptions          | Exception construction and message propagation                                                            |
+| `GlobalExceptionHandlerTest` | Exception Handler   | HTTP status mapping for all handled exception types                                                       |
+| `ProfileIntegrationTest`     | Integration         | Full lifecycle: context loading, end-to-end requests via MockWebServer, async persistence, error handling |
 
 ## API Endpoints
 
@@ -348,16 +358,18 @@ All configuration is externalised to `application.yml`:
 
 Detailed rationale for every major design decision:
 
-| ADR                                                        | Decision                                                |
-| ---------------------------------------------------------- | ------------------------------------------------------- |
-| [ADR-001](docs/adr/ADR-001-hexagonal-architecture.md)      | Hexagonal Architecture (Ports and Adapters)             |
-| [ADR-002](docs/adr/ADR-002-webclient-over-resttemplate.md) | WebClient over RestTemplate                             |
-| [ADR-003](docs/adr/ADR-003-resilience4j-patterns.md)       | Resilience4j for circuit breaking, retry, rate limiting |
-| [ADR-004](docs/adr/ADR-004-caffeine-cache.md)              | Caffeine cache for rate limit mitigation                |
-| [ADR-005](docs/adr/ADR-005-strategy-pattern-language.md)   | Strategy pattern for language resolution                |
-| [ADR-006](docs/adr/ADR-006-structured-json-logging.md)     | Structured JSON logging with correlation IDs            |
-| [ADR-007](docs/adr/ADR-007-docker-containerisation.md)     | Docker multi-stage build                                |
-| [ADR-008](docs/adr/ADR-008-h2-database.md)                 | H2 in-memory database                                   |
+| ADR                                                   | Decision                                                |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| [ADR-001](adr/ADR-001-hexagonal-architecture.md)      | Hexagonal Architecture (Ports and Adapters)             |
+| [ADR-002](adr/ADR-002-webclient-over-resttemplate.md) | WebClient over RestTemplate                             |
+| [ADR-003](adr/ADR-003-resilience4j-patterns.md)       | Resilience4j for circuit breaking, retry, rate limiting |
+| [ADR-004](adr/ADR-004-caffeine-cache.md)              | Caffeine cache for rate limit mitigation                |
+| [ADR-005](adr/ADR-005-strategy-pattern-language.md)   | Strategy pattern for language resolution                |
+| [ADR-006](adr/ADR-006-structured-json-logging.md)     | Structured JSON logging with correlation IDs            |
+| [ADR-007](adr/ADR-007-docker-containerisation.md)     | Docker multi-stage build                                |
+| [ADR-008](adr/ADR-008-h2-database.md)                 | H2 in-memory database                                   |
+| [ADR-009](adr/ADR-009-async-search-history.md)        | Async search history via domain events                  |
+| [ADR-010](adr/ADR-010-scaling-strategy.md)            | Scaling strategy for 1k+ requests per minute            |
 
 ## Design Patterns Used
 

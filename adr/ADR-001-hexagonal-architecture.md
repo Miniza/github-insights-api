@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-04-13  
-**Deciders:** Development Team
+**Deciders:** Miniza
 
 ## Context
 
@@ -81,8 +81,3 @@ The requirement mentions: "Add implementations to connect to repositories other 
 - **Positive:** Domain models (`User`, `Repo`, `LanguageStat`) are pure Java records with no JPA/Jackson annotations
 - **Negative:** More packages and files than a simple layered approach — overhead for a small project
 - **Trade-off accepted:** The structural overhead is justified by the requirement for production-readiness and extensibility
-
-## References
-
-- Alistair Cockburn, "Hexagonal Architecture" (2005)
-- Tom Hombergs, _Get Your Hands Dirty on Clean Architecture_ (2019)

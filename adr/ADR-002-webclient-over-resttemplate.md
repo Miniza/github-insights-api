@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-04-13  
-**Deciders:** Development Team
+**Deciders:** Miniza
 
 ## Context
 
@@ -58,8 +58,3 @@ Timeouts are externalised to `application.yml`:
 - **Positive:** Can be upgraded to fully non-blocking if the persistence layer moves to R2DBC
 - **Negative:** Adds `spring-boot-starter-webflux` dependency alongside `spring-boot-starter-web`
 - **Negative:** `.block()` usage means we don't benefit from non-blocking I/O in this iteration
-
-## References
-
-- Spring Documentation: [WebClient](https://docs.spring.io/spring-framework/reference/web/webflux-webclient.html)
-- Spring Blog: "RestTemplate is in maintenance mode"

@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-04-13  
-**Deciders:** Development Team
+**Deciders:** Miniza
 
 ## Context
 

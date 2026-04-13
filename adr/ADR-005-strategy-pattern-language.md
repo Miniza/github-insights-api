@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-04-13  
-**Deciders:** Development Team
+**Deciders:** Miniza
 
 ## Context
 
@@ -77,8 +77,3 @@ A senior engineer demonstrates **design thinking**, not just "it works." The Str
 - **Positive:** Clean separation of domain logic from the service layer
 - **Negative:** Two classes instead of one — slight overhead for a simple algorithm
 - **Trade-off accepted:** Demonstrates design principles appropriate for a senior/staff submission
-
-## References
-
-- Gang of Four, _Design Patterns_ (1994) — Strategy Pattern
-- Robert C. Martin, _Clean Architecture_ (2017) — Open/Closed Principle

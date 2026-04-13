@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-04-13  
-**Deciders:** Development Team
+**Deciders:** Miniza
 
 ## Context
 
@@ -99,11 +99,3 @@ This is a larger change and only necessary at very high scale.
 - Redis and PostgreSQL introduce operational complexity (backups, monitoring, failover)
 - Distributed rate limiting adds a network hop per request
 - Full reactive migration (step 5) would require significant refactoring
-
-### Capacity Estimate
-
-| Configuration                    | Estimated Throughput |
-| -------------------------------- | -------------------- |
-| Single instance + H2 + Caffeine  | ~200 req/min         |
-| 3 instances + PostgreSQL + Redis | ~3,000 req/min       |
-| 3 instances + reactive + Redis   | ~10,000+ req/min     |
