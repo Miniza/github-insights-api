@@ -1,11 +1,11 @@
 package za.vodacom.repoprofile.application.dto;
 
-import java.time.Instant;
+import java.time.ZonedDateTime;
 
 public record SearchSummary(
         Long id,
         String username,
         String summary,
-        Instant searchedAt
+        ZonedDateTime searchedAt
 ) {
 }

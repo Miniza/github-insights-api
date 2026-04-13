@@ -7,9 +7,12 @@ import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.SearchRecord;
 import za.vodacom.repoprofile.domain.model.User;
 
+import java.time.ZoneId;
 import java.util.List;
 
 public final class ProfileMapper {
+
+    private static final ZoneId SAST = ZoneId.of("Africa/Johannesburg");
 
     private ProfileMapper() {
     }
@@ -48,7 +51,7 @@ public final class ProfileMapper {
                 record.id(),
                 record.username(),
                 record.summary(),
-                record.searchedAt()
+                record.searchedAt().atZone(SAST)
         );
     }
 
