@@ -1,10 +1,10 @@
 package za.vodacom.repoprofile.application.mapper;
 
-import za.vodacom.repoprofile.adapters.persistence.entity.SearchHistoryEntity;
 import za.vodacom.repoprofile.application.dto.ProfileResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.domain.model.Repo;
+import za.vodacom.repoprofile.domain.model.SearchRecord;
 import za.vodacom.repoprofile.domain.model.User;
 
 import java.util.List;
@@ -43,12 +43,12 @@ public final class ProfileMapper {
         );
     }
 
-    public static SearchSummary toSearchSummary(SearchHistoryEntity entity) {
+    public static SearchSummary toSearchSummary(SearchRecord record) {
         return new SearchSummary(
-                entity.getId(),
-                entity.getUsername(),
-                entity.getSummary(),
-                entity.getSearchedAt()
+                record.id(),
+                record.username(),
+                record.summary(),
+                record.searchedAt()
         );
     }
 

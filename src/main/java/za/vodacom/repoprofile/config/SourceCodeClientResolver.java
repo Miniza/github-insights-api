@@ -3,6 +3,7 @@ package za.vodacom.repoprofile.config;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 import za.vodacom.repoprofile.domain.model.ProviderType;
+import za.vodacom.repoprofile.ports.out.ClientResolver;
 import za.vodacom.repoprofile.ports.out.SourceCodeClient;
 
 import java.util.EnumMap;
@@ -13,10 +14,10 @@ import java.util.Map;
  * Resolves the correct {@link SourceCodeClient} adapter for a given provider.
  * <p>
  * Each adapter registers itself via Spring's {@code @Component("github")} naming convention.
- * This resolver maps {@link ProviderType} → adapter at startup and provides O(1) lookups.
+ * This resolver maps {@link ProviderType} \u2192 adapter at startup and provides O(1) lookups.
  */
 @Component
-public class SourceCodeClientResolver {
+public class SourceCodeClientResolver implements ClientResolver {
 
     private final Map<ProviderType, SourceCodeClient> clients;
 
@@ -46,6 +47,7 @@ public class SourceCodeClientResolver {
         return client;
     }
 
+    @Override
     public SourceCodeClient resolve(String providerKey) {
         return resolve(ProviderType.from(providerKey));
     }

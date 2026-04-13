@@ -10,12 +10,12 @@ import za.vodacom.repoprofile.application.dto.PagedResponse;
 import za.vodacom.repoprofile.application.dto.RepoResponse;
 import za.vodacom.repoprofile.application.dto.SearchSummary;
 import za.vodacom.repoprofile.application.mapper.ProfileMapper;
-import za.vodacom.repoprofile.config.SourceCodeClientResolver;
 import za.vodacom.repoprofile.domain.event.SearchPerformedEvent;
 import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.User;
 import za.vodacom.repoprofile.domain.strategy.LanguageStrategy;
 import za.vodacom.repoprofile.ports.in.ProfileUseCase;
+import za.vodacom.repoprofile.ports.out.ClientResolver;
 import za.vodacom.repoprofile.ports.out.SourceCodeClient;
 import za.vodacom.repoprofile.ports.out.SearchHistoryRepositoryPort;
 
@@ -28,13 +28,13 @@ public class ProfileService implements ProfileUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ProfileService.class);
 
-    private final SourceCodeClientResolver clientResolver;
+    private final ClientResolver clientResolver;
     private final SearchHistoryRepositoryPort searchHistoryRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final LanguageStrategy languageStrategy;
     private final int maxRecords;
 
-    public ProfileService(SourceCodeClientResolver clientResolver,
+    public ProfileService(ClientResolver clientResolver,
                           SearchHistoryRepositoryPort searchHistoryRepository,
                           ApplicationEventPublisher eventPublisher,
                           Map<String, LanguageStrategy> strategies,
