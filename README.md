@@ -58,6 +58,58 @@ docker run -p 8080:8080 repo-profile
 ./mvnw spring-boot:run
 ```
 
+## Running Tests
+
+### Run all tests
+
+```bash
+./mvnw test
+```
+
+**Windows (PowerShell)** — if `mvnw.cmd` is not present, use the wrapper jar directly:
+
+```powershell
+cd "path\to\vodacom-github"
+$projDir = (Get-Location).Path
+java "-Dmaven.multiModuleProjectDirectory=$projDir" -cp .mvn/wrapper/maven-wrapper.jar org.apache.maven.wrapper.MavenWrapperMain test
+```
+
+### Run a specific test class
+
+```bash
+./mvnw test -Dtest=ProfileServiceTest
+```
+
+### Run tests for a specific package
+
+```bash
+./mvnw test -Dtest="za.vodacom.repoprofile.domain.strategy.*"
+```
+
+### Run with verbose output
+
+```bash
+./mvnw test -Dsurefire.useFile=false
+```
+
+### Test Coverage
+
+The test suite covers the following layers:
+
+| Test Class                   | Layer               | What it tests                                                 |
+| ---------------------------- | ------------------- | ------------------------------------------------------------- |
+| `ProfileServiceTest`         | Application Service | Profile/repo fetching, search history, event publishing       |
+| `ProfileControllerTest`      | REST Controller     | Endpoint routing, validation, error responses (`@WebMvcTest`) |
+| `GitHubWebClientAdapterTest` | Adapter             | WebClient mocking, user/repo mapping, error handling          |
+| `ProfileMapperTest`          | Mapper              | Domain→DTO mapping, timezone conversion, summary building     |
+| `ByRepoCountStrategyTest`    | Domain Strategy     | Language ranking by repository count                          |
+| `ByRepoSizeStrategyTest`     | Domain Strategy     | Language ranking by total repo size                           |
+| `ApplicationDtoTest`         | DTOs                | Record creation, equality, factory methods                    |
+| `PagedResponseTest`          | DTOs                | Pagination logic, edge cases, type safety                     |
+| `DomainModelTest`            | Domain Models       | Record creation, equality for `User`, `Repo`, `SearchRecord`  |
+| `CustomExceptionTest`        | Exceptions          | Exception construction and message propagation                |
+| `GlobalExceptionHandlerTest` | Exception Handler   | HTTP status mapping for all handled exception types           |
+
 ## API Endpoints
 
 | Method | Endpoint                            | Description                                    |
