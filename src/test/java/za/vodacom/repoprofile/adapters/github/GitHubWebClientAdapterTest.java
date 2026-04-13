@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import reactor.core.publisher.Mono;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubRepoResponse;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubUserResponse;
@@ -52,7 +53,7 @@ class GitHubWebClientAdapterTest {
                 java.time.Duration.ofSeconds(5), java.time.Duration.ofSeconds(10),
                 50, 100
         );
-        adapter = new GitHubWebClientAdapter(webClient, props);
+        adapter = new GitHubWebClientAdapter(webClient, props, new SimpleMeterRegistry());
     }
 
     @Test
@@ -211,17 +212,18 @@ class GitHubWebClientAdapterTest {
     // ---- WebClient mock helpers ----
 
     private void setupUserMocking(GitHubUserResponse userDto) {
+        ResponseEntity<GitHubUserResponse> responseEntity = ResponseEntity.ok(userDto);
         doReturn(requestHeadersUriSpec).when(webClient).get();
         doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString(), any(Object[].class));
         doReturn(responseSpec).when(requestHeadersSpec).retrieve();
-        doReturn(Mono.just(userDto)).when(responseSpec).bodyToMono(GitHubUserResponse.class);
+        doReturn(Mono.just(responseEntity)).when(responseSpec).toEntity(GitHubUserResponse.class);
     }
 
     private void setupUserMockingWithException(WebClientResponseException exception) {
         doReturn(requestHeadersUriSpec).when(webClient).get();
         doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString(), any(Object[].class));
         doReturn(responseSpec).when(requestHeadersSpec).retrieve();
-        doReturn(Mono.error(exception)).when(responseSpec).bodyToMono(GitHubUserResponse.class);
+        doReturn(Mono.error(exception)).when(responseSpec).toEntity(GitHubUserResponse.class);
     }
 
     private void setupReposMocking(List<GitHubRepoResponse> reposDtos, String nextLink) {

@@ -39,6 +39,7 @@ Built using **Hexagonal Architecture (Ports and Adapters)** to enforce clean bou
 | Database    | H2 (in-memory) with Spring Data JPA                                                   |
 | Caching     | Caffeine (500 entries, 5 min TTL)                                                     |
 | Resilience  | Resilience4j (circuit breaker, retry with exponential backoff + jitter, rate limiter) |
+| Metrics     | Micrometer + Prometheus (custom timers, counters, GitHub rate limit gauge)            |
 | API Docs    | SpringDoc OpenAPI 2.6.0 (Swagger UI)                                                  |
 | Logging     | Logstash Logback Encoder (structured JSON in prod)                                    |
 | Build       | Maven 3.9.9, Docker multi-stage build                                                 |
@@ -319,6 +320,19 @@ Caffeine local cache with 500 max entries and 5-minute TTL. Applied at the adapt
 
 ## Observability
 
+### Custom Metrics (Micrometer + Prometheus)
+
+The GitHub adapter exposes custom metrics via Micrometer, available at `/actuator/prometheus`:
+
+| Metric                            | Type    | Description                                       |
+| --------------------------------- | ------- | ------------------------------------------------- |
+| `github_api_fetch_user_seconds`   | Timer   | Latency of user profile fetches (p50, p95, p99)   |
+| `github_api_fetch_repos_seconds`  | Timer   | Latency of repository fetches                     |
+| `github_api_errors_total`         | Counter | Total GitHub API errors (5xx, timeouts, etc.)     |
+| `github_api_rate_limit_remaining` | Gauge   | Remaining GitHub API calls (from response header) |
+
+The adapter reads `X-RateLimit-Remaining` from every GitHub response and logs a warning when fewer than 10 calls remain.
+
 ### Logging
 
 | Profile | Format                            |
@@ -333,6 +347,7 @@ Every request is tagged with a `correlationId` (UUID) for end-to-end tracing.
 ```
 http://localhost:8080/actuator/health
 http://localhost:8080/actuator/metrics
+http://localhost:8080/actuator/prometheus
 http://localhost:8080/actuator/caches
 http://localhost:8080/actuator/circuitbreakers
 http://localhost:8080/actuator/retries

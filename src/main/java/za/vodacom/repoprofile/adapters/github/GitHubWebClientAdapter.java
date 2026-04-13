@@ -3,6 +3,9 @@ package za.vodacom.repoprofile.adapters.github;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,6 +26,7 @@ import za.vodacom.repoprofile.util.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,10 +40,27 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
     private final int maxPages;
     private final int perPage;
 
-    public GitHubWebClientAdapter(WebClient gitHubWebClient, GitHubApiProperties props) {
+    private final Timer userFetchTimer;
+    private final Timer repoFetchTimer;
+    private final Counter apiErrorCounter;
+    private final AtomicInteger rateLimitRemaining = new AtomicInteger(-1);
+
+    public GitHubWebClientAdapter(WebClient gitHubWebClient, GitHubApiProperties props, MeterRegistry registry) {
         this.webClient = gitHubWebClient;
         this.maxPages = props.maxPages();
         this.perPage = props.perPage();
+
+        this.userFetchTimer = Timer.builder("github.api.fetch.user")
+                .description("Time to fetch a user profile from GitHub")
+                .register(registry);
+        this.repoFetchTimer = Timer.builder("github.api.fetch.repos")
+                .description("Time to fetch repositories from GitHub")
+                .register(registry);
+        this.apiErrorCounter = Counter.builder("github.api.errors")
+                .description("Number of GitHub API errors")
+                .register(registry);
+
+        registry.gauge("github.api.rate_limit.remaining", rateLimitRemaining);
     }
 
     @Override
@@ -49,26 +70,32 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
     @Retry(name = "github")
     public User fetchUser(String username) {
         log.info("Fetching GitHub profile for user: {}", username);
-        try {
-            GitHubUserResponse dto = webClient.get()
-                    .uri("/users/{username}", username)
-                    .retrieve()
-                    .bodyToMono(GitHubUserResponse.class)
-                    .block();
+        return userFetchTimer.record(() -> {
+            try {
+                ResponseEntity<GitHubUserResponse> response = webClient.get()
+                        .uri("/users/{username}", username)
+                        .retrieve()
+                        .toEntity(GitHubUserResponse.class)
+                        .block();
 
-            if (dto == null) {
+                if (response == null || response.getBody() == null) {
+                    throw new NotFoundException("GitHub user not found: " + username);
+                }
+
+                updateRateLimitGauge(response);
+                GitHubUserResponse dto = response.getBody();
+
+                return new User(
+                        dto.login(), dto.name(), dto.bio(), dto.avatarUrl(),
+                        dto.htmlUrl(), dto.publicRepos(), dto.followers(), dto.following()
+                );
+            } catch (WebClientResponseException.NotFound e) {
                 throw new NotFoundException("GitHub user not found: " + username);
+            } catch (WebClientResponseException e) {
+                apiErrorCounter.increment();
+                throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
             }
-
-            return new User(
-                    dto.login(), dto.name(), dto.bio(), dto.avatarUrl(),
-                    dto.htmlUrl(), dto.publicRepos(), dto.followers(), dto.following()
-            );
-        } catch (WebClientResponseException.NotFound e) {
-            throw new NotFoundException("GitHub user not found: " + username);
-        } catch (WebClientResponseException e) {
-            throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
-        }
+        });
     }
 
     @Override
@@ -78,39 +105,44 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
     @Retry(name = "github")
     public List<Repo> fetchRepositories(String username) {
         log.info("Fetching GitHub repositories for user: {}", username);
-        try {
-            List<Repo> allRepos = new ArrayList<>();
-            String uri = "/users/{username}/repos?per_page=" + perPage + "&sort=stars&direction=desc";
-            int page = 0;
+        return repoFetchTimer.record(() -> {
+            try {
+                List<Repo> allRepos = new ArrayList<>();
+                String uri = "/users/{username}/repos?per_page=" + perPage + "&sort=stars&direction=desc";
+                int page = 0;
 
-            while (uri != null && page < maxPages) {
-                ResponseEntity<List<GitHubRepoResponse>> response = webClient.get()
-                        .uri(uri, username)
-                        .retrieve()
-                        .toEntity(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
-                        .block();
+                while (uri != null && page < maxPages) {
+                    ResponseEntity<List<GitHubRepoResponse>> response = webClient.get()
+                            .uri(uri, username)
+                            .retrieve()
+                            .toEntity(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
+                            .block();
 
-                if (response == null || response.getBody() == null || response.getBody().isEmpty()) {
-                    break;
+                    if (response == null || response.getBody() == null || response.getBody().isEmpty()) {
+                        break;
+                    }
+
+                    updateRateLimitGauge(response);
+
+                    response.getBody().stream()
+                            .map(dto -> new Repo(
+                                    dto.name(), dto.description(), dto.htmlUrl(), dto.language(),
+                                    dto.stargazersCount(), dto.forksCount(), dto.size()
+                            ))
+                            .forEach(allRepos::add);
+
+                    uri = parseNextLink(response.getHeaders().getFirst("Link"));
+                    page++;
                 }
 
-                response.getBody().stream()
-                        .map(dto -> new Repo(
-                                dto.name(), dto.description(), dto.htmlUrl(), dto.language(),
-                                dto.stargazersCount(), dto.forksCount(), dto.size()
-                        ))
-                        .forEach(allRepos::add);
-
-                uri = parseNextLink(response.getHeaders().getFirst("Link"));
-                page++;
+                return allRepos;
+            } catch (WebClientResponseException.NotFound e) {
+                throw new NotFoundException("GitHub user not found: " + username);
+            } catch (WebClientResponseException e) {
+                apiErrorCounter.increment();
+                throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
             }
-
-            return allRepos;
-        } catch (WebClientResponseException.NotFound e) {
-            throw new NotFoundException("GitHub user not found: " + username);
-        } catch (WebClientResponseException e) {
-            throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
-        }
+        });
     }
 
     private String parseNextLink(String linkHeader) {
@@ -121,6 +153,21 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
         return matcher.find() ? matcher.group(1) : null;
     }
 
+    private void updateRateLimitGauge(ResponseEntity<?> response) {
+        String remaining = response.getHeaders().getFirst("X-RateLimit-Remaining");
+        if (remaining != null) {
+            try {
+                int value = Integer.parseInt(remaining);
+                rateLimitRemaining.set(value);
+                if (value < 10) {
+                    log.warn("GitHub API rate limit low: {} calls remaining", value);
+                }
+            } catch (NumberFormatException ignored) {
+                // non-numeric header value
+            }
+        }
+    }
+
     @Override
     @CircuitBreaker(name = "github", fallbackMethod = "fetchRepositoriesPageFallback")
     @RateLimiter(name = "github")
@@ -128,18 +175,20 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
     public List<Repo> fetchRepositories(String username, int page, int perPage) {
         log.info("Fetching GitHub repositories for user: {} (page={}, perPage={})", username, page, perPage);
         try {
-            List<GitHubRepoResponse> body = webClient.get()
+            ResponseEntity<List<GitHubRepoResponse>> response = webClient.get()
                     .uri("/users/{username}/repos?sort=stars&direction=desc&page={page}&per_page={perPage}",
                             username, page, perPage)
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
+                    .toEntity(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
                     .block();
 
-            if (body == null) {
+            if (response == null || response.getBody() == null) {
                 return List.of();
             }
 
-            return body.stream()
+            updateRateLimitGauge(response);
+
+            return response.getBody().stream()
                     .map(dto -> new Repo(
                             dto.name(), dto.description(), dto.htmlUrl(), dto.language(),
                             dto.stargazersCount(), dto.forksCount(), dto.size()
@@ -148,6 +197,7 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
         } catch (WebClientResponseException.NotFound e) {
             throw new NotFoundException("GitHub user not found: " + username);
         } catch (WebClientResponseException e) {
+            apiErrorCounter.increment();
             throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
         }
     }
