@@ -78,16 +78,18 @@ public class ProfileService implements ProfileUseCase {
         log.info("Processing repos request for user: {} via provider: {} (page={}, perPage={})", username, provider, page, perPage);
 
         SourceCodeClient client = clientResolver.resolve(provider);
-        List<Repo> repos = client.fetchRepositories(username);
-        List<RepoResponse> sorted = repos.stream()
-                .sorted(Comparator.comparingInt(Repo::stargazersCount).reversed())
+        User user = client.fetchUser(username);
+        List<Repo> repos = client.fetchRepositories(username, page, perPage);
+
+        List<RepoResponse> repoResponses = repos.stream()
                 .map(ProfileMapper::toRepoResponse)
                 .toList();
 
-        String summary = "%s – %d repos (page %d)".formatted(username, repos.size(), page);
+        String summary = "%s – %d repos (page %d)".formatted(username, user.publicRepos(), page);
         eventPublisher.publishEvent(new SearchPerformedEvent(username, summary));
 
-        return PagedResponse.of(sorted, page, perPage);
+        int totalPages = (int) Math.ceil((double) user.publicRepos() / perPage);
+        return new PagedResponse<>(repoResponses, page, perPage, user.publicRepos(), totalPages);
     }
 
     @Override

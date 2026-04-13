@@ -142,9 +142,11 @@ class ProfileServiceTest {
         int page = 1;
         int perPage = 10;
 
-        List<Repo> repos = createTestRepositories(25);
+        User user = new User("testuser", "Test User", "Bio", "avatar", "url", 25, 10, 5);
+        List<Repo> pageRepos = createTestRepositories(10);
         when(clientResolver.resolve(provider)).thenReturn(sourceCodeClient);
-        when(sourceCodeClient.fetchRepositories(username)).thenReturn(repos);
+        when(sourceCodeClient.fetchUser(username)).thenReturn(user);
+        when(sourceCodeClient.fetchRepositories(username, page, perPage)).thenReturn(pageRepos);
 
         // Act
         PagedResponse<RepoResponse> response = profileService.getRepositories(username, provider, page, perPage);
@@ -152,13 +154,14 @@ class ProfileServiceTest {
         // Assert
         assertThat(response)
                 .isNotNull()
-                .extracting(PagedResponse::page)
-                .isEqualTo(page);
+                .extracting(PagedResponse::page, PagedResponse::totalItems, PagedResponse::totalPages)
+                .containsExactly(1, 25, 3);
 
         assertThat(response.content())
                 .hasSize(perPage)
                 .allSatisfy(repo -> assertThat(repo).isNotNull());
 
+        verify(sourceCodeClient).fetchRepositories(username, page, perPage);
         verify(eventPublisher).publishEvent(any(SearchPerformedEvent.class));
     }
 
@@ -171,14 +174,17 @@ class ProfileServiceTest {
         int page = 1;
         int perPage = 10;
 
+        User user = new User("emptyuser", "Empty User", "Bio", "avatar", "url", 0, 0, 0);
         when(clientResolver.resolve(provider)).thenReturn(sourceCodeClient);
-        when(sourceCodeClient.fetchRepositories(username)).thenReturn(List.of());
+        when(sourceCodeClient.fetchUser(username)).thenReturn(user);
+        when(sourceCodeClient.fetchRepositories(username, page, perPage)).thenReturn(List.of());
 
         // Act
         PagedResponse<RepoResponse> response = profileService.getRepositories(username, provider, page, perPage);
 
         // Assert
         assertThat(response.content()).isEmpty();
+        assertThat(response.totalItems()).isZero();
         verify(eventPublisher).publishEvent(any(SearchPerformedEvent.class));
     }
 

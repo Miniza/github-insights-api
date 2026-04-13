@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubRepoResponse;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubUserResponse;
+import za.vodacom.repoprofile.config.GitHubApiProperties;
 import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.User;
 import za.vodacom.repoprofile.exception.NotFoundException;
@@ -46,7 +47,12 @@ class GitHubWebClientAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new GitHubWebClientAdapter(webClient, 50, 100);
+        var props = new GitHubApiProperties(
+                "https://api.github.com", "test-agent", "",
+                java.time.Duration.ofSeconds(5), java.time.Duration.ofSeconds(10),
+                50, 100
+        );
+        adapter = new GitHubWebClientAdapter(webClient, props);
     }
 
     @Test

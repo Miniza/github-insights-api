@@ -5,7 +5,6 @@ import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubRepoResponse;
 import za.vodacom.repoprofile.adapters.github.dto.GitHubUserResponse;
+import za.vodacom.repoprofile.config.GitHubApiProperties;
 import za.vodacom.repoprofile.domain.model.Repo;
 import za.vodacom.repoprofile.domain.model.User;
 import za.vodacom.repoprofile.exception.ProviderApiException;
@@ -37,12 +37,10 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
     private final int maxPages;
     private final int perPage;
 
-    public GitHubWebClientAdapter(WebClient gitHubWebClient,
-                                  @Value("${github.api.max-pages:50}") int maxPages,
-                                  @Value("${github.api.per-page:100}") int perPage) {
+    public GitHubWebClientAdapter(WebClient gitHubWebClient, GitHubApiProperties props) {
         this.webClient = gitHubWebClient;
-        this.maxPages = maxPages;
-        this.perPage = perPage;
+        this.maxPages = props.maxPages();
+        this.perPage = props.perPage();
     }
 
     @Override
@@ -124,6 +122,37 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
         return matcher.find() ? matcher.group(1) : null;
     }
 
+    @Override
+    @CircuitBreaker(name = "github", fallbackMethod = "fetchRepositoriesPageFallback")
+    @RateLimiter(name = "github")
+    @Retry(name = "github")
+    public List<Repo> fetchRepositories(String username, int page, int perPage) {
+        log.info("Fetching GitHub repositories for user: {} (page={}, perPage={})", username, page, perPage);
+        try {
+            List<GitHubRepoResponse> body = webClient.get()
+                    .uri("/users/{username}/repos?sort=stars&direction=desc&page={page}&per_page={perPage}",
+                            username, page, perPage)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
+                    .block();
+
+            if (body == null) {
+                return List.of();
+            }
+
+            return body.stream()
+                    .map(dto -> new Repo(
+                            dto.name(), dto.description(), dto.htmlUrl(), dto.language(),
+                            dto.stargazersCount(), dto.forksCount(), dto.size()
+                    ))
+                    .toList();
+        } catch (WebClientResponseException.NotFound e) {
+            throw new NotFoundException("GitHub user not found: " + username);
+        } catch (WebClientResponseException e) {
+            throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
+        }
+    }
+
     @SuppressWarnings("unused")
     private User fetchUserFallback(String username, Throwable t) {
         if (t instanceof NotFoundException) {
@@ -139,6 +168,15 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
             throw (NotFoundException) t;
         }
         log.error("Circuit breaker open for repos fetch: {}", t.getMessage());
+        throw new ProviderApiException("GitHub service is temporarily unavailable. Please try again later.", t);
+    }
+
+    @SuppressWarnings("unused")
+    private List<Repo> fetchRepositoriesPageFallback(String username, int page, int perPage, Throwable t) {
+        if (t instanceof NotFoundException) {
+            throw (NotFoundException) t;
+        }
+        log.error("Circuit breaker open for paginated repos fetch: {}", t.getMessage());
         throw new ProviderApiException("GitHub service is temporarily unavailable. Please try again later.", t);
     }
 }
