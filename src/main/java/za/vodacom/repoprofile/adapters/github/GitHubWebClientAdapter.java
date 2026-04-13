@@ -22,7 +22,6 @@ import za.vodacom.repoprofile.ports.out.SourceCodeClient;
 import za.vodacom.repoprofile.util.Constants;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
