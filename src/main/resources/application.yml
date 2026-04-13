@@ -45,6 +45,8 @@ github:
     read-timeout: 10s
     token: "" # optional: set to bypass rate limits
     user-agent: repo-profile-app
+    max-pages: 50
+    per-page: 100
 
 # --- Search history configuration ---
 search-history:

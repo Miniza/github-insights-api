@@ -5,8 +5,10 @@ import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -19,22 +21,32 @@ import za.vodacom.repoprofile.exception.NotFoundException;
 import za.vodacom.repoprofile.ports.out.SourceCodeClient;
 import za.vodacom.repoprofile.util.Constants;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component("github")
 public class GitHubWebClientAdapter implements SourceCodeClient {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubWebClientAdapter.class);
+    private static final Pattern NEXT_LINK_PATTERN = Pattern.compile("<([^>]+)>;\\s*rel=\"next\"");
 
     private final WebClient webClient;
+    private final int maxPages;
+    private final int perPage;
 
-    public GitHubWebClientAdapter(WebClient gitHubWebClient) {
+    public GitHubWebClientAdapter(WebClient gitHubWebClient,
+                                  @Value("${github.api.max-pages:50}") int maxPages,
+                                  @Value("${github.api.per-page:100}") int perPage) {
         this.webClient = gitHubWebClient;
+        this.maxPages = maxPages;
+        this.perPage = perPage;
     }
 
     @Override
-    @Cacheable(value = Constants.CACHE_PROFILES, key = "#username")
+    @Cacheable(value = Constants.CACHE_PROFILES, key = "'github:' + #username")
     @CircuitBreaker(name = "github", fallbackMethod = "fetchUserFallback")
     @RateLimiter(name = "github")
     @Retry(name = "github")
@@ -63,34 +75,53 @@ public class GitHubWebClientAdapter implements SourceCodeClient {
     }
 
     @Override
-    @Cacheable(value = Constants.CACHE_REPOS, key = "#username")
+    @Cacheable(value = Constants.CACHE_REPOS, key = "'github:' + #username")
     @CircuitBreaker(name = "github", fallbackMethod = "fetchRepositoriesFallback")
     @RateLimiter(name = "github")
     @Retry(name = "github")
     public List<Repo> fetchRepositories(String username) {
         log.info("Fetching GitHub repositories for user: {}", username);
         try {
-            List<GitHubRepoResponse> dtos = webClient.get()
-                    .uri("/users/{username}/repos?per_page=100&sort=stars&direction=desc", username)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
-                    .block();
+            List<Repo> allRepos = new ArrayList<>();
+            String uri = "/users/{username}/repos?per_page=" + perPage + "&sort=stars&direction=desc";
+            int page = 0;
 
-            if (dtos == null) {
-                return Collections.emptyList();
+            while (uri != null && page < maxPages) {
+                ResponseEntity<List<GitHubRepoResponse>> response = webClient.get()
+                        .uri(uri, username)
+                        .retrieve()
+                        .toEntity(new ParameterizedTypeReference<List<GitHubRepoResponse>>() {})
+                        .block();
+
+                if (response == null || response.getBody() == null || response.getBody().isEmpty()) {
+                    break;
+                }
+
+                response.getBody().stream()
+                        .map(dto -> new Repo(
+                                dto.name(), dto.description(), dto.htmlUrl(), dto.language(),
+                                dto.stargazersCount(), dto.forksCount(), dto.size()
+                        ))
+                        .forEach(allRepos::add);
+
+                uri = parseNextLink(response.getHeaders().getFirst("Link"));
+                page++;
             }
 
-            return dtos.stream()
-                    .map(dto -> new Repo(
-                            dto.name(), dto.description(), dto.htmlUrl(), dto.language(),
-                            dto.stargazersCount(), dto.forksCount(), dto.size()
-                    ))
-                    .toList();
+            return allRepos;
         } catch (WebClientResponseException.NotFound e) {
             throw new NotFoundException("GitHub user not found: " + username);
         } catch (WebClientResponseException e) {
             throw new ProviderApiException("GitHub API error: " + e.getStatusCode(), e);
         }
+    }
+
+    private String parseNextLink(String linkHeader) {
+        if (linkHeader == null || linkHeader.isBlank()) {
+            return null;
+        }
+        Matcher matcher = NEXT_LINK_PATTERN.matcher(linkHeader);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     @SuppressWarnings("unused")

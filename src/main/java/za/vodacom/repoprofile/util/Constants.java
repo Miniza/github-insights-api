@@ -5,7 +5,7 @@ public final class Constants {
     private Constants() {
     }
 
-    // Cache names
-    public static final String CACHE_PROFILES = "github-profiles";
-    public static final String CACHE_REPOS = "github-repos";
+    // Cache names (provider-agnostic; each adapter prefixes the key with its provider name)
+    public static final String CACHE_PROFILES = "profiles";
+    public static final String CACHE_REPOS = "repos";
 }

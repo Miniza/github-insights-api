@@ -12,7 +12,7 @@ H2 is mandated by the requirements. This ADR documents the design decisions arou
 
 ## Decision
 
-Use **H2 in-memory mode** with **Spring Data JPA** and automatic schema generation (`ddl-auto: update`).
+Use **H2 in-memory mode** with **Spring Data JPA** and **Flyway** for schema management (`ddl-auto: validate`).
 
 ### Schema
 
@@ -53,11 +53,12 @@ The database adapter is protected by a `database` circuit breaker (see ADR-003).
 
 The challenge explicitly requires H2. For a production deployment, we would migrate to PostgreSQL with Flyway migrations.
 
-### Why `ddl-auto: update` and not Flyway?
+### Why Flyway with `ddl-auto: validate`?
 
-- H2 in-memory databases are destroyed on restart — migrations add no value
-- `update` mode auto-creates the schema on startup
-- For PostgreSQL, we would switch to Flyway (see "Production Migration Path" below)
+- Flyway provides repeatable, version-controlled schema creation via `V1__create_search_history.sql`
+- `validate` mode ensures the JPA entity model stays in sync with the actual schema
+- Even with H2 in-memory databases, Flyway ensures consistent schema setup and serves as documentation
+- The same migration workflow carries over to PostgreSQL with zero changes
 
 ### Why `DB_CLOSE_DELAY=-1`?
 
@@ -76,8 +77,8 @@ If this application were deployed to production, the following changes would be 
 | Current (H2)                             | Production (PostgreSQL)                   |
 | ---------------------------------------- | ----------------------------------------- |
 | `spring.datasource.url: jdbc:h2:mem:...` | `jdbc:postgresql://host:5432/repoprofile` |
-| `ddl-auto: update`                       | `ddl-auto: validate`                      |
-| No migrations                            | Flyway with versioned SQL scripts         |
+| `ddl-auto: validate`                     | `ddl-auto: validate`                      |
+| Flyway with versioned SQL scripts        | Flyway with versioned SQL scripts         |
 | In-memory (data lost on restart)         | Persistent storage                        |
 | H2 console enabled                       | H2 console disabled                       |
 
@@ -90,4 +91,4 @@ This is a configuration-only change — the JPA entities and repositories requir
 - **Positive:** H2 console available at `/h2-console` for debugging
 - **Negative:** Data is lost on every application restart
 - **Negative:** Not suitable for multi-instance deployments (each instance has its own database)
-- **Negative:** `ddl-auto: update` should never be used with a persistent production database
+- **Positive:** `ddl-auto: validate` catches entity/schema drift at startup
